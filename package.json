@@ -1,0 +1,31 @@
+{
+  "name": "bft-cloudflare",
+  "version": "2.0.0",
+  "description": "BFT Workout Tracker - Cloudflare Workers Edition",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create bft-workout-db",
+    "db:migrate": "wrangler d1 execute bft-workout-db --remote --file=./migrations/0001_init.sql",
+    "db:migrate:local": "wrangler d1 execute bft-workout-db --file=./migrations/0001_init.sql",
+    "db:seed": "wrangler d1 execute bft-workout-db --remote --file=./migrations/0002_seed.sql",
+    "db:seed:local": "wrangler d1 execute bft-workout-db --file=./migrations/0002_seed.sql",
+    "db:migrate:images": "wrangler d1 execute bft-workout-db --remote --file=./migrations/0003_add_image_urls.sql",
+    "db:migrate:images:local": "wrangler d1 execute bft-workout-db --file=./migrations/0003_add_image_urls.sql",
+    "db:migrate:branch": "wrangler d1 execute bft-workout-db --remote --file=./migrations/0004_add_branch_to_plans.sql",
+    "db:migrate:branch:local": "wrangler d1 execute bft-workout-db --file=./migrations/0004_add_branch_to_plans.sql",
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "db:setup:local": "npm run db:migrate:local && npm run db:seed:local",
+    "db:reset": "wrangler d1 execute bft-workout-db --remote --command \"DROP TABLE IF EXISTS workout_plan_stations; DROP TABLE IF EXISTS workout_plans; DROP TABLE IF EXISTS workout_logs; DROP TABLE IF EXISTS exercises;\" && npm run db:setup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^4.60.0"
+  }
+}

@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#64B5F6">
+    <title>All Workouts - BFT Tracker</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">BFT Tracker</div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links" id="nav-links">
+            <a href="/" class="nav-link">Log Workout</a>
+            <a href="/plan.html" class="nav-link">Plan</a>
+            <a href="/library.html" class="nav-link">Library</a>
+            <a href="/progress.html" class="nav-link">Progress</a>
+            <a href="/all-workouts.html" class="nav-link active">Workout Records</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>All Workouts</h1>
+
+        <!-- Recent Workout Plans Section (collapsible, at top) -->
+        <div class="card collapsible-section collapsed" id="plans-section">
+            <div class="collapsible-header" onclick="togglePlansSection()">
+                <h2>Workout Plans <span class="plan-count-badge" id="plan-count-badge"></span></h2>
+                <span class="expand-icon" id="plans-expand-icon">▶</span>
+            </div>
+            <div class="collapsible-content" id="plans-content" style="display: none;">
+                <div id="plans-list">
+                    <p class="loading">Loading plans...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="form-row-compact">
+                <div class="form-group">
+                    <label for="date-filter">Date</label>
+                    <input type="date" id="date-filter" onchange="loadWorkouts()">
+                </div>
+                <div class="form-group">
+                    <label for="category-filter">Category</label>
+                    <select id="category-filter" onchange="loadWorkouts()">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="exercise-filter">Exercise</label>
+                <select id="exercise-filter" onchange="applyExerciseFilter()">
+                    <option value="">All Exercises</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="text" id="search" placeholder="Search by exercise name..." oninput="filterWorkouts()">
+            </div>
+            <!-- Progress Tracker button (hidden by default, shown when filtering by exercise) -->
+            <div id="progress-btn-container" class="hidden">
+                <button class="btn btn-outline btn-block" onclick="goToProgress()">
+                    View Progress for <span id="progress-exercise-name"></span>
+                </button>
+            </div>
+        </div>
+
+        <div class="card collapsible-section collapsed" id="workouts-section">
+            <div class="collapsible-header" onclick="toggleWorkoutsSection()">
+                <h2>Workouts(<span id="workout-count">0</span>)</h2>
+                <div class="header-controls">
+                    <div class="pagination-header" id="pagination-header" style="display: none;" onclick="event.stopPropagation()">
+                        <button class="btn-page-nav" id="prev-page-btn-top" onclick="prevPage()" disabled>&lt;</button>
+                        <input type="number" id="page-input" min="1" value="1" onchange="goToPage()">
+                        <span id="page-info-header">/1</span>
+                        <button class="btn-page-nav" id="next-page-btn-top" onclick="nextPage()" disabled>&gt;</button>
+                    </div>
+                    <span class="expand-icon" id="workouts-expand-icon">▶</span>
+                </div>
+            </div>
+            <div class="collapsible-content" id="workouts-content" style="display: none;">
+                <div id="workouts-list">
+                    <p class="loading">Loading...</p>
+                </div>
+                <div class="pagination-controls pagination-bottom" id="pagination-bottom" style="display: none;">
+                    <button class="btn btn-sm btn-secondary" id="prev-page-btn" onclick="prevPage()" disabled>Prev</button>
+                    <span id="page-info-bottom"></span>
+                    <button class="btn btn-sm btn-secondary" id="next-page-btn" onclick="nextPage()" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Branch Breakdown Section -->
+        <div class="card">
+            <div class="section-header-row">
+                <h2>Branch Breakdown</h2>
+                <select id="branch-days-filter" onchange="loadBranchBreakdown()">
+                    <option value="90">Last 90 days</option>
+                    <option value="30">Last 30 days</option>
+                    <option value="180">Last 180 days</option>
+                    <option value="365">Last year</option>
+                </select>
+            </div>
+            <div id="branch-breakdown">
+                <p class="loading">Loading...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Workout</h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="edit-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>Exercise</label>
+                    <input type="text" id="edit-exercise" disabled>
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-group">
+                        <label for="edit-weight">Weight (kg)</label>
+                        <input type="number" id="edit-weight" step="0.5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-reps">Reps</label>
+                        <input type="number" id="edit-reps" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-sets">Sets</label>
+                        <input type="number" id="edit-sets" min="1" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-date">Date</label>
+                    <input type="date" id="edit-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-notes">Notes</label>
+                    <textarea id="edit-notes" rows="2"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>BFT Workout Tracker v2.0 | Cloudflare Workers + D1</p>
+    </footer>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/utils.js"></script>
+    <script>
+        let allWorkouts = [];
+        let allExercises = [];
+        let currentExerciseId = null;
+        let currentExerciseName = null;
+        let isLoading = false;
+        let searchDebounceTimer = null;
+        let currentPage = 1;
+        const PAGE_SIZE = 20;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Load constants and exercises in parallel for faster initial load
+            await Promise.all([
+                loadConstants(),
+                loadExercises(),
+                loadRecentPlans(),
+                loadBranchBreakdown()
+            ]);
+
+            // Check for filter from Library page
+            const filterExerciseId = sessionStorage.getItem('filterExerciseId');
+            const filterExerciseName = sessionStorage.getItem('filterExerciseName');
+            if (filterExerciseId) {
+                document.getElementById('exercise-filter').value = filterExerciseId;
+                currentExerciseId = filterExerciseId;
+                currentExerciseName = filterExerciseName;
+                sessionStorage.removeItem('filterExerciseId');
+                sessionStorage.removeItem('filterExerciseName');
+                showProgressButton(filterExerciseName);
+            }
+
+            // Check for specific workout to highlight (from Log Workout page)
+            const viewWorkoutId = sessionStorage.getItem('viewWorkoutId');
+            if (viewWorkoutId) {
+                sessionStorage.removeItem('viewWorkoutId');
+            }
+
+            await loadWorkouts();
+
+            // Scroll to and highlight specific workout if requested
+            if (viewWorkoutId) {
+                setTimeout(() => {
+                    const workoutCard = document.querySelector(`.workout-card-compact[data-id="${viewWorkoutId}"]`);
+                    if (workoutCard) {
+                        workoutCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        workoutCard.classList.add('highlighted');
+                        // Expand the workout details
+                        const row = workoutCard.querySelector('.workout-card-row');
+                        if (row) toggleWorkoutDetails(row);
+                    }
+                }, 100);
+            }
+
+            document.getElementById('edit-form').addEventListener('submit', saveWorkout);
+
+            // Mobile nav
+            const navToggle = document.getElementById('nav-toggle');
+            const navLinks = document.getElementById('nav-links');
+            if (navToggle) {
+                navToggle.addEventListener('click', () => {
+                    navToggle.classList.toggle('active');
+                    navLinks.classList.toggle('show');
+                });
+            }
+        });
+
+        async function loadConstants() {
+            try {
+                const data = await api.getConstants();
+                document.getElementById('category-filter').innerHTML =
+                    '<option value="">All Categories</option>' +
+                    data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading constants:', error);
+                showToast('Error loading constants: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadExercises() {
+            try {
+                const data = await api.getExercises({});
+                allExercises = data.exercises;
+                document.getElementById('exercise-filter').innerHTML =
+                    '<option value="">All Exercises</option>' +
+                    data.exercises.map(ex => `<option value="${ex.id}">${ex.name}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading exercises:', error);
+            }
+        }
+
+        function applyExerciseFilter() {
+            const exerciseId = document.getElementById('exercise-filter').value;
+            const exerciseSelect = document.getElementById('exercise-filter');
+            const exerciseName = exerciseSelect.selectedOptions[0]?.text;
+
+            currentExerciseId = exerciseId || null;
+            currentExerciseName = exerciseId ? exerciseName : null;
+
+            if (exerciseId) {
+                showProgressButton(exerciseName);
+            } else {
+                hideProgressButton();
+            }
+
+            loadWorkouts();
+        }
+
+        function showProgressButton(exerciseName) {
+            document.getElementById('progress-exercise-name').textContent = exerciseName;
+            document.getElementById('progress-btn-container').classList.remove('hidden');
+        }
+
+        function hideProgressButton() {
+            document.getElementById('progress-btn-container').classList.add('hidden');
+        }
+
+        function goToProgress() {
+            if (currentExerciseId) {
+                sessionStorage.setItem('progressExerciseId', currentExerciseId);
+                sessionStorage.setItem('progressExerciseName', currentExerciseName);
+                window.location.href = '/progress.html';
+            }
+        }
+
+        function goToExerciseProgress(exerciseId, exerciseName) {
+            sessionStorage.setItem('progressExerciseId', exerciseId);
+            sessionStorage.setItem('progressExerciseName', exerciseName);
+            window.location.href = '/progress.html';
+        }
+
+        function toggleWorkoutDetails(rowEl) {
+            const card = rowEl.closest('.workout-card-compact');
+            const details = card.querySelector('.workout-card-details');
+            const icon = card.querySelector('.workout-expand-icon');
+
+            if (details.classList.contains('hidden')) {
+                details.classList.remove('hidden');
+                icon.textContent = '▼';
+            } else {
+                details.classList.add('hidden');
+                icon.textContent = '▶';
+            }
+        }
+
+        function togglePlansSection() {
+            const section = document.getElementById('plans-section');
+            const content = document.getElementById('plans-content');
+            const icon = document.getElementById('plans-expand-icon');
+
+            if (section.classList.contains('collapsed')) {
+                section.classList.remove('collapsed');
+                section.classList.add('expanded');
+                content.style.display = '';
+                icon.textContent = '▼';
+            } else {
+                section.classList.remove('expanded');
+                section.classList.add('collapsed');
+                content.style.display = 'none';
+                icon.textContent = '▶';
+            }
+        }
+
+        function toggleWorkoutsSection() {
+            const section = document.getElementById('workouts-section');
+            const content = document.getElementById('workouts-content');
+            const icon = document.getElementById('workouts-expand-icon');
+
+            if (section.classList.contains('collapsed')) {
+                section.classList.remove('collapsed');
+                section.classList.add('expanded');
+                content.style.display = '';
+                icon.textContent = '▼';
+            } else {
+                section.classList.remove('expanded');
+                section.classList.add('collapsed');
+                content.style.display = 'none';
+                icon.textContent = '▶';
+            }
+        }
+
+        async function toggleNoShow(planDate, currentValue) {
+            try {
+                // First get the current plan data
+                const planData = await api.getPlan(planDate);
+                if (!planData.plan) {
+                    showToast('Plan not found', 'error');
+                    return;
+                }
+
+                // Update the plan with toggled no_show value
+                const updatedPlan = {
+                    plan_date: planDate,
+                    theme: planData.plan.theme,
+                    workout_type: planData.plan.workout_type,
+                    branch: planData.plan.branch,
+                    description: planData.plan.description,
+                    no_show: !currentValue,
+                    stations: planData.stations || []
+                };
+
+                await api.createPlan(updatedPlan);
+                showToast(currentValue ? 'Marked as attended' : 'Marked as no-show', 'success');
+                loadRecentPlans();
+                loadBranchBreakdown(); // Refresh branch breakdown
+            } catch (error) {
+                console.error('Error toggling no-show:', error);
+                showToast('Error updating plan: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadRecentPlans() {
+            const plansList = document.getElementById('plans-list');
+            const countBadge = document.getElementById('plan-count-badge');
+
+            try {
+                const data = await api.getPlans(10);
+                const plans = data.plans || [];
+
+                countBadge.textContent = plans.length > 0 ? `(${plans.length})` : '';
+
+                if (plans.length === 0) {
+                    plansList.innerHTML = '<p class="text-muted">No workout plans saved yet</p>';
+                    return;
+                }
+
+                plansList.innerHTML = plans.map(plan => `
+                    <div class="plan-card" onclick="filterByPlanDate('${plan.plan_date}')">
+                        <div class="plan-card-header">
+                            <strong>${formatDate(plan.plan_date)}</strong>
+                            <div class="plan-badges">
+                                ${plan.theme ? `<span class="badge badge-theme">${plan.theme}</span>` : ''}
+                                ${plan.branch ? `<span class="badge badge-branch">${plan.branch}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="plan-type-row">
+                            <span class="plan-type-text">${plan.workout_type || ''}</span>
+                            <button type="button" class="btn btn-xs btn-toggle btn-noshow ${plan.no_show ? 'active' : ''}"
+                                onclick="event.stopPropagation(); toggleNoShow('${plan.plan_date}', ${plan.no_show ? 'true' : 'false'})">
+                                No-Show
+                            </button>
+                        </div>
+                        ${plan.stations && plan.stations.length > 0 ? `
+                            <div class="plan-stations-preview">
+                                ${plan.stations.slice(0, 3).map((s, i) =>
+                                    `<span class="station-chip">${i + 1}. ${s.exercise_name}</span>`
+                                ).join('')}
+                                ${plan.stations.length > 3 ? `<span class="station-chip more">+${plan.stations.length - 3} more</span>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } catch (error) {
+                plansList.innerHTML = '<p class="text-muted">Error loading plans</p>';
+            }
+        }
+
+        function filterByPlanDate(date) {
+            document.getElementById('date-filter').value = date;
+            loadWorkouts();
+        }
+
+        async function loadWorkouts() {
+            // Prevent concurrent requests
+            if (isLoading) return;
+            isLoading = true;
+
+            // Reset to page 1 when filters change
+            currentPage = 1;
+
+            const date = document.getElementById('date-filter').value;
+            const category = document.getElementById('category-filter').value;
+            const exerciseId = document.getElementById('exercise-filter').value;
+            const container = document.getElementById('workouts-list');
+
+            // Show loading state
+            container.innerHTML = '<p class="loading">Loading...</p>';
+
+            try {
+                const params = { limit: 500 };  // Get more results for pagination
+                if (date) params.workout_date = date;
+                if (category) params.category = category;
+                if (exerciseId) params.exercise_id = exerciseId;
+
+                const data = await api.getWorkouts(params);
+                allWorkouts = data.workouts || [];
+                applySearchFilter();
+            } catch (error) {
+                console.error('Error loading workouts:', error);
+                allWorkouts = [];
+                container.innerHTML = '<p class="text-muted">Error loading workouts. Please try again.</p>';
+                document.getElementById('workout-count').textContent = '0';
+                showToast('Error loading workouts: ' + (error.message || 'Unknown error'), 'error');
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        function applySearchFilter() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const filtered = allWorkouts.filter(w =>
+                w.exercise_name.toLowerCase().includes(search)
+            );
+            renderWorkouts(filtered);
+        }
+
+        function filterWorkouts(resetPage = true) {
+            // Reset page when search text changes
+            if (resetPage) currentPage = 1;
+
+            // Debounce search to prevent excessive re-renders
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                applySearchFilter();
+            }, 150);
+        }
+
+        function renderWorkouts(workouts) {
+            const container = document.getElementById('workouts-list');
+            const totalCount = workouts.length;
+            document.getElementById('workout-count').textContent = totalCount;
+
+            if (totalCount === 0) {
+                container.innerHTML = '<p class="text-muted">No workouts found</p>';
+                document.getElementById('pagination-header').style.display = 'none';
+                document.getElementById('pagination-bottom').style.display = 'none';
+                return;
+            }
+
+            // Calculate pagination
+            const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIdx = (currentPage - 1) * PAGE_SIZE;
+            const endIdx = Math.min(startIdx + PAGE_SIZE, totalCount);
+            const paginatedWorkouts = workouts.slice(startIdx, endIdx);
+
+            // Update pagination controls
+            document.getElementById('page-info-header').textContent = `/${totalPages}`;
+            document.getElementById('page-info-bottom').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('page-input').value = currentPage;
+            document.getElementById('page-input').max = totalPages;
+
+            // Show/hide pagination controls - always show header controls if there are workouts
+            const showPagination = totalPages > 1;
+            document.getElementById('pagination-header').style.display = 'flex';  // Always show in header
+            document.getElementById('pagination-bottom').style.display = showPagination ? 'flex' : 'none';
+            document.getElementById('prev-page-btn').disabled = currentPage <= 1;
+            document.getElementById('next-page-btn').disabled = currentPage >= totalPages;
+            document.getElementById('prev-page-btn-top').disabled = currentPage <= 1;
+            document.getElementById('next-page-btn-top').disabled = currentPage >= totalPages;
+
+            // Build HTML - each workout on its own line with inline date
+            const htmlParts = [];
+            for (const w of paginatedWorkouts) {
+                const escapedName = w.exercise_name.replace(/'/g, "\\'");
+                const shortDate = formatShortDate(w.workout_date);
+                const categoryShort = getCategoryShort(w.category);
+                htmlParts.push(`
+                    <div class="workout-card-compact" data-id="${w.id}">
+                        <div class="workout-card-row" onclick="toggleWorkoutDetails(this)">
+                            <div class="workout-card-title">
+                                <span class="workout-date-inline">${shortDate}</span>
+                                <strong>${w.exercise_name}</strong>
+                                <span class="workout-category-tag">${categoryShort}</span>
+                            </div>
+                            <span class="workout-expand-icon">▶</span>
+                        </div>
+                        <div class="workout-card-details hidden">
+                            <div class="workout-detail-row">
+                                <span class="workout-stats">${w.weight_kg}kg × ${w.reps} reps × ${w.sets} sets</span>
+                                ${w.tags ? `<span class="workout-tag">${w.tags}</span>` : ''}
+                            </div>
+                            ${w.notes ? `<div class="workout-notes">${w.notes}</div>` : ''}
+                            <div class="workout-card-actions-compact">
+                                <button class="btn-compact btn-progress" onclick="event.stopPropagation(); goToExerciseProgress(${w.exercise_id}, '${escapedName}')">Progress</button>
+                                <button class="btn-compact btn-edit" onclick="event.stopPropagation(); editWorkout(${w.id})">Edit</button>
+                                <button class="btn-compact btn-delete" onclick="event.stopPropagation(); deleteWorkout(${w.id})">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+            container.innerHTML = htmlParts.join('');
+        }
+
+        // Format date as dd/mm/yy
+        function formatShortDate(dateStr) {
+            const d = new Date(dateStr + 'T00:00:00');
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = String(d.getFullYear()).slice(-2);
+            return `${day}/${month}/${year}`;
+        }
+
+        // Convert category to short form
+        function getCategoryShort(category) {
+            const shorts = {
+                'Upper Body': 'UB',
+                'Lower Body': 'LB',
+                'Core': 'Core',
+                'Cardio': 'Cardio',
+                'Full Body': 'FB',
+                'Push': 'Push',
+                'Pull': 'Pull',
+                'Legs': 'Legs',
+                'Arms': 'Arms',
+                'Back': 'Back',
+                'Chest': 'Chest',
+                'Shoulders': 'Shld'
+            };
+            return shorts[category] || category;
+        }
+
+        // Pagination functions
+        function goToPage() {
+            const input = document.getElementById('page-input');
+            const page = parseInt(input.value);
+            if (!isNaN(page) && page >= 1) {
+                currentPage = page;
+                applySearchFilter();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                applySearchFilter();
+            }
+        }
+
+        function nextPage() {
+            currentPage++;
+            applySearchFilter();
+        }
+
+        async function editWorkout(id) {
+            try {
+                const workout = await api.getWorkout(id);
+                document.getElementById('edit-id').value = id;
+                document.getElementById('edit-exercise').value = workout.exercise_name;
+                document.getElementById('edit-weight').value = workout.weight_kg;
+                document.getElementById('edit-reps').value = workout.reps;
+                document.getElementById('edit-sets').value = workout.sets;
+                document.getElementById('edit-date').value = workout.workout_date;
+                document.getElementById('edit-notes').value = workout.notes || '';
+                document.getElementById('edit-modal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading workout:', error);
+                showToast('Error loading workout: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        async function saveWorkout(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+
+            const data = {
+                weight_kg: parseFloat(document.getElementById('edit-weight').value),
+                reps: parseInt(document.getElementById('edit-reps').value),
+                sets: parseInt(document.getElementById('edit-sets').value),
+                workout_date: document.getElementById('edit-date').value,
+                notes: document.getElementById('edit-notes').value,
+            };
+
+            try {
+                await api.updateWorkout(id, data);
+                showToast('Workout updated!', 'success');
+                closeEditModal();
+                loadWorkouts();
+            } catch (error) {
+                console.error('Error updating workout:', error);
+                showToast('Error updating workout: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function deleteWorkout(id) {
+            if (!confirm('Delete this workout? This cannot be undone.')) return;
+
+            try {
+                await api.deleteWorkout(id);
+                showToast('Workout deleted', 'success');
+                loadWorkouts();
+            } catch (error) {
+                console.error('Error deleting workout:', error);
+                showToast('Error deleting workout: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadBranchBreakdown() {
+            const container = document.getElementById('branch-breakdown');
+            const daysFilter = parseInt(document.getElementById('branch-days-filter').value);
+            const includeNoShow = document.getElementById('include-noshow-toggle')?.checked || false;
+
+            try {
+                // Get all plans to calculate branch breakdown
+                const data = await api.getPlans(200);
+                const plans = data.plans || [];
+
+                // Calculate date cutoff
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - daysFilter);
+                const cutoffStr = cutoffDate.toISOString().split('T')[0];
+
+                // Filter plans by date and count by branch
+                const branchCounts = {};
+                let totalVisits = 0;
+
+                plans.forEach(plan => {
+                    // Include no-show plans only if toggle is on
+                    const shouldInclude = includeNoShow || !plan.no_show;
+                    if (plan.plan_date >= cutoffStr && plan.branch && shouldInclude) {
+                        const branch = plan.branch.trim();
+                        if (branch) {
+                            branchCounts[branch] = (branchCounts[branch] || 0) + 1;
+                            totalVisits++;
+                        }
+                    }
+                });
+
+                if (totalVisits === 0) {
+                    container.innerHTML = `
+                        <p class="text-muted">No branch data in this period</p>
+                        <div class="branch-total-row">
+                            <span class="branch-total-text">Total: 0 visits</span>
+                            <label class="toggle-label">
+                                <input type="checkbox" id="include-noshow-toggle" ${includeNoShow ? 'checked' : ''} onchange="loadBranchBreakdown()">
+                                <span class="toggle-text">Incl. no-show</span>
+                            </label>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Sort branches by count descending
+                const sortedBranches = Object.entries(branchCounts)
+                    .sort((a, b) => b[1] - a[1]);
+
+                container.innerHTML = `
+                    <div class="branch-breakdown-list">
+                        ${sortedBranches.map(([branch, count]) => {
+                            const percent = ((count / totalVisits) * 100).toFixed(1);
+                            return `
+                                <div class="branch-breakdown-item">
+                                    <div class="branch-breakdown-info">
+                                        <span class="branch-name">${branch}</span>
+                                        <span class="branch-stats">${count} visits (${percent}%)</span>
+                                    </div>
+                                    <div class="branch-breakdown-bar">
+                                        <div class="branch-breakdown-fill" style="width: ${percent}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="branch-total-row">
+                        <span class="branch-total-text">Total: ${totalVisits} visits</span>
+                        <label class="toggle-label">
+                            <input type="checkbox" id="include-noshow-toggle" ${includeNoShow ? 'checked' : ''} onchange="loadBranchBreakdown()">
+                            <span class="toggle-text">Incl. no-show</span>
+                        </label>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading branch breakdown:', error);
+                container.innerHTML = '<p class="text-muted">Error loading branch data</p>';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+[
+  {
+    "results": [
+      {
+        "id": 2,
+        "exercise_id": 27,
+        "weight_kg": 25,
+        "reps": 6,
+        "sets": 5,
+        "workout_date": "2026-01-24",
+        "notes": "[Variable: 20/22.5/25/27.5/30kg × 6/6/6/6/6 reps]",
+        "tags": "",
+        "created_at": "2026-01-29 05:14:49"
+      },
+      {
+        "id": 3,
+        "exercise_id": 13,
+        "weight_kg": 33.33,
+        "reps": 3,
+        "sets": 3,
+        "workout_date": "2026-01-29",
+        "notes": "[Variable: 32/32/36kg × 3/3/3 reps] First 2 set = warm up. Reps are each side.",
+        "tags": "",
+        "created_at": "2026-01-29 11:21:53"
+      },
+      {
+        "id": 4,
+        "exercise_id": 14,
+        "weight_kg": 12,
+        "reps": 3,
+        "sets": 3,
+        "workout_date": "2026-01-31",
+        "notes": "Part of superset",
+        "tags": "",
+        "created_at": "2026-02-01 02:04:49"
+      },
+      {
+        "id": 5,
+        "exercise_id": 1,
+        "weight_kg": 22.5,
+        "reps": 8,
+        "sets": 3,
+        "workout_date": "2025-11-27",
+        "notes": "[Variable: 20/22.5/25kg × 8/8/8 reps] 3rd set, 5r only. Need reduce to 23.75kg last 3r.",
+        "tags": "",
+        "created_at": "2026-02-01 05:08:56"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "APAC",
+      "served_by_colo": "SIN",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 0.3412
+      },
+      "duration": 0.3412,
+      "changes": 0,
+      "last_row_id": 0,
+      "changed_db": false,
+      "size_after": 376832,
+      "rows_read": 4,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]

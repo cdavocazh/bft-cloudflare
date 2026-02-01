@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#64B5F6">
+    <title>Plan - BFT Tracker</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">BFT Tracker</div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links" id="nav-links">
+            <a href="/" class="nav-link">Log Workout</a>
+            <a href="/plan.html" class="nav-link active">Plan</a>
+            <a href="/library.html" class="nav-link">Library</a>
+            <a href="/progress.html" class="nav-link">Progress</a>
+            <a href="/all-workouts.html" class="nav-link">Workout Records</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header-row">
+            <h1>Plan</h1>
+            <button type="button" class="btn btn-success btn-sm" id="copy-plan-btn" onclick="copyPlanToToday()" style="display: none;">Copy</button>
+        </div>
+
+        <div class="card">
+            <form id="plan-form">
+                <div class="form-row-compact">
+                    <div class="form-group">
+                        <label for="plan-date">Date</label>
+                        <input type="date" id="plan-date" required onchange="loadPlanForDate()">
+                    </div>
+                    <div class="form-group">
+                        <label for="plan-theme">Theme</label>
+                        <div class="theme-input-container">
+                            <input type="text" id="plan-theme" list="theme-options" placeholder="Select"
+                                oninput="filterThemeOptions(this)" onfocus="showThemeDropdown()" autocomplete="off" required>
+                            <div class="theme-dropdown hidden" id="theme-dropdown"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row-type-branch">
+                    <div class="form-group type-group">
+                        <label for="plan-type">Workout Type</label>
+                        <select id="plan-type"></select>
+                    </div>
+                    <div class="form-group branch-group">
+                        <label for="plan-branch">Branch</label>
+                        <div class="branch-input-container">
+                            <input type="text" id="plan-branch" list="branch-history" placeholder="e.g., A, B, Upper" autocomplete="off">
+                            <datalist id="branch-history">
+                                <!-- Populated by JS from previous plans -->
+                            </datalist>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="plan-description">Description (optional)</label>
+                    <textarea id="plan-description" rows="2" placeholder="Notes about the workout..."></textarea>
+                </div>
+
+                <div class="stations-header">
+                    <h3>Stations</h3>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addStation()">+ Add Station</button>
+                </div>
+
+                <div id="stations-container">
+                    <!-- Stations added dynamically -->
+                </div>
+
+                <div class="form-actions form-row-save-delete">
+                    <button type="submit" class="btn btn-primary save-btn">Save Plan</button>
+                    <button type="button" class="btn btn-danger delete-btn" onclick="deletePlan()">Delete Plan</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="section-header-row">
+                <h2>Recent Plans</h2>
+                <select id="theme-filter" onchange="loadRecentPlans()">
+                    <option value="">All Themes</option>
+                </select>
+            </div>
+            <div id="recent-plans">
+                <p class="loading">Loading...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>BFT Workout Tracker v2.0 | Cloudflare Workers + D1</p>
+    </footer>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/utils.js"></script>
+    <script>
+        let CONSTANTS = {};
+        let stationCount = 0;
+        let allExercisesCache = {}; // Cache exercises by category+equipment key
+        let branchHistory = []; // Store unique branch values from previous plans
+        let themeHistory = []; // Store unique theme values from previous plans
+        let themeCounts = {}; // Store theme usage counts
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadConstants();
+
+            // Set today's date
+            document.getElementById('plan-date').value = new Date().toISOString().split('T')[0];
+
+            // Add initial stations (first expanded, rest collapsed)
+            for (let i = 0; i < 3; i++) addStation({}, i === 0);
+
+            loadPlanForDate();
+            loadRecentPlans();
+            loadBranchHistory();
+            loadThemeHistory();
+
+            document.getElementById('plan-form').addEventListener('submit', savePlan);
+
+            // Mobile nav
+            const navToggle = document.getElementById('nav-toggle');
+            const navLinks = document.getElementById('nav-links');
+            if (navToggle) {
+                navToggle.addEventListener('click', () => {
+                    navToggle.classList.toggle('active');
+                    navLinks.classList.toggle('show');
+                });
+            }
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.station-exercise-search-container')) {
+                    document.querySelectorAll('.station-exercise-dropdown, .station-more-dropdown').forEach(dropdown => {
+                        dropdown.classList.add('hidden');
+                    });
+                }
+                if (!e.target.closest('.theme-input-container')) {
+                    hideThemeDropdown();
+                }
+            });
+        });
+
+        async function loadConstants() {
+            try {
+                const data = await api.getConstants();
+                CONSTANTS = data;
+
+                // Theme dropdown will be rendered after loadThemeHistory is called
+
+                document.getElementById('plan-type').innerHTML =
+                    '<option value="">-</option>' +
+                    data.workout_types.map(t => `<option value="${t}">${t}</option>`).join('');
+
+                // Pre-load exercises for "All" equipment
+                const exerciseData = await api.getExercises({});
+                allExercisesCache['all'] = exerciseData.exercises;
+            } catch (error) {
+                console.error('Error loading constants:', error);
+                showToast('Error loading constants: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        function renderThemeDropdown(themes, searchTerm = '') {
+            const dropdown = document.getElementById('theme-dropdown');
+            const filtered = themes.filter(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
+
+            let html = '';
+
+            if (filtered.length > 0) {
+                html = filtered.map(t => `
+                    <div class="theme-option" onclick="selectTheme('${t.replace(/'/g, "\\'")}')">${t}</div>
+                `).join('');
+            }
+
+            // Add "create new" option if search term doesn't match any existing theme
+            if (searchTerm.trim() && !themes.some(t => t.toLowerCase() === searchTerm.toLowerCase())) {
+                html += `
+                    <div class="theme-option create-new" onclick="selectTheme('${searchTerm.replace(/'/g, "\\'")}')">
+                        <span class="create-icon">+</span> Add "${searchTerm}"
+                    </div>
+                `;
+            }
+
+            if (!html) {
+                html = '<div class="theme-option disabled">No themes found</div>';
+            }
+
+            dropdown.innerHTML = html;
+        }
+
+        function getAllThemes() {
+            // Combine constant themes with saved themes from plans
+            const allThemes = new Set(CONSTANTS.workout_themes || []);
+            themeHistory.forEach(t => allThemes.add(t));
+
+            // Sort by usage count (descending), then alphabetically
+            return Array.from(allThemes).sort((a, b) => {
+                const countA = themeCounts[a] || 0;
+                const countB = themeCounts[b] || 0;
+                if (countB !== countA) return countB - countA;
+                return a.localeCompare(b);
+            });
+        }
+
+        function filterThemeOptions(input) {
+            const searchTerm = input.value;
+            renderThemeDropdown(getAllThemes(), searchTerm);
+            showThemeDropdown();
+        }
+
+        function showThemeDropdown() {
+            const dropdown = document.getElementById('theme-dropdown');
+            dropdown.classList.remove('hidden');
+        }
+
+        function hideThemeDropdown() {
+            const dropdown = document.getElementById('theme-dropdown');
+            dropdown.classList.add('hidden');
+        }
+
+        function selectTheme(theme) {
+            document.getElementById('plan-theme').value = theme;
+            hideThemeDropdown();
+        }
+
+        function addStation(data = {}, expanded = false) {
+            stationCount++;
+            const container = document.getElementById('stations-container');
+            const stationDiv = document.createElement('div');
+            stationDiv.className = 'station-row' + (expanded ? ' expanded' : ' collapsed');
+            stationDiv.dataset.stationNum = stationCount;
+
+            // Build equipment options
+            const equipmentOptions = CONSTANTS.equipment_types
+                ? CONSTANTS.equipment_types.map(eq => `<option value="${eq}">${eq}</option>`).join('')
+                : '';
+
+            // Get exercise preview text for collapsed state
+            const exercisePreview = data.exercise_name || 'Click to expand';
+
+            stationDiv.innerHTML = `
+                <div class="station-row-header" onclick="toggleStation(this)">
+                    <div class="station-header-left">
+                        <div class="station-number">${stationCount}</div>
+                        <span class="station-preview">${exercisePreview}</span>
+                    </div>
+                    <div class="station-header-right">
+                        <span class="station-expand-icon">${expanded ? '▼' : '▶'}</span>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="event.stopPropagation(); removeStation(this)">×</button>
+                    </div>
+                </div>
+                <div class="station-fields"${expanded ? '' : ' style="display: none;"'}>
+                    <div class="station-field-row">
+                        <div class="station-filter-group">
+                            <label>Equipment</label>
+                            <select class="station-equipment" onchange="loadStationExercises(this)">
+                                <option value="">All</option>
+                                ${equipmentOptions}
+                            </select>
+                        </div>
+                        <div class="station-filter-group">
+                            <label>More</label>
+                            <select class="station-more" onchange="toggleCustomExercise(this)">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="station-field-full">
+                        <label>Exercise</label>
+                        <div class="station-exercise-search-container">
+                            <input type="text" class="station-exercise-search" placeholder="Type to search exercises..."
+                                oninput="filterStationExercises(this)" onfocus="showStationDropdown(this)" autocomplete="off">
+                            <div class="station-exercise-dropdown hidden"></div>
+                        </div>
+                        <input type="hidden" class="station-exercise-id">
+                    </div>
+                    <div class="station-field-full station-more-field hidden">
+                        <label>Exercise</label>
+                        <div class="station-exercise-search-container">
+                            <input type="text" class="station-more-search" placeholder="Type to search other exercises..."
+                                oninput="filterMoreExercises(this)" onfocus="showMoreDropdown(this)" autocomplete="off">
+                            <div class="station-more-dropdown hidden"></div>
+                        </div>
+                    </div>
+                    <div class="station-field-row">
+                        <div class="station-field">
+                            <label>Sets</label>
+                            <input type="text" class="station-sets" placeholder="e.g., 4x8">
+                        </div>
+                        <div class="station-field">
+                            <label>Time</label>
+                            <input type="text" class="station-time" placeholder="Time">
+                        </div>
+                    </div>
+                    <div class="station-field-full">
+                        <label>Notes</label>
+                        <input type="text" class="station-notes" placeholder="Station notes (optional)">
+                    </div>
+                </div>
+            `;
+            container.appendChild(stationDiv);
+
+            // Load exercises for this station
+            loadStationExercises(stationDiv.querySelector('.station-equipment'));
+
+            // Pre-fill data if provided
+            if (data.exercise_name) {
+                const searchInput = stationDiv.querySelector('.station-exercise-search');
+                searchInput.value = data.exercise_name;
+                updateStationPreview(stationDiv);
+            }
+            if (data.set_arrangement) {
+                stationDiv.querySelector('.station-sets').value = data.set_arrangement;
+            }
+            if (data.station_time) {
+                stationDiv.querySelector('.station-time').value = data.station_time;
+            }
+            if (data.notes) {
+                stationDiv.querySelector('.station-notes').value = data.notes;
+            }
+        }
+
+        function toggleStation(headerEl) {
+            const stationRow = headerEl.closest('.station-row');
+            const fields = stationRow.querySelector('.station-fields');
+            const icon = stationRow.querySelector('.station-expand-icon');
+
+            if (stationRow.classList.contains('collapsed')) {
+                stationRow.classList.remove('collapsed');
+                stationRow.classList.add('expanded');
+                fields.style.display = '';
+                icon.textContent = '▼';
+            } else {
+                stationRow.classList.remove('expanded');
+                stationRow.classList.add('collapsed');
+                fields.style.display = 'none';
+                icon.textContent = '▶';
+                updateStationPreview(stationRow);
+            }
+        }
+
+        function updateStationPreview(stationRow) {
+            const preview = stationRow.querySelector('.station-preview');
+            const moreFilter = stationRow.querySelector('.station-more').value;
+            let exerciseName = '';
+
+            if (moreFilter === 'Yes') {
+                const moreSearch = stationRow.querySelector('.station-more-search');
+                exerciseName = moreSearch ? moreSearch.value.trim() : '';
+            } else {
+                exerciseName = stationRow.querySelector('.station-exercise-search').value.trim();
+            }
+
+            preview.textContent = exerciseName || 'Click to expand';
+        }
+
+        function removeStation(btn) {
+            btn.closest('.station-row').remove();
+            renumberStations();
+        }
+
+        async function loadStationExercises(equipmentSelect) {
+            const stationRow = equipmentSelect.closest('.station-row');
+            const equipmentType = equipmentSelect.value;
+            const cacheKey = equipmentType || 'all';
+
+            try {
+                // Check cache first
+                if (!allExercisesCache[cacheKey]) {
+                    const params = {};
+                    if (equipmentType) params.equipment_type = equipmentType;
+                    const data = await api.getExercises(params);
+                    allExercisesCache[cacheKey] = data.exercises;
+                }
+
+                const exercises = allExercisesCache[cacheKey];
+                stationRow.dataset.exercises = JSON.stringify(exercises);
+                renderStationDropdown(stationRow, exercises);
+            } catch (error) {
+                console.error('Error loading exercises:', error);
+            }
+        }
+
+        function renderStationDropdown(stationRow, exercises, searchTerm = '') {
+            const dropdown = stationRow.querySelector('.station-exercise-dropdown');
+
+            if (exercises.length === 0) {
+                // No matches - offer to create new exercise
+                if (searchTerm.trim()) {
+                    dropdown.innerHTML = `
+                        <div class="exercise-option disabled">No exercises found</div>
+                        <div class="exercise-option create-new" onclick="createNewExercise(this, '${searchTerm.replace(/'/g, "\\'")}')">
+                            <span class="create-icon">+</span> Add "${searchTerm}" to library
+                        </div>
+                    `;
+                } else {
+                    dropdown.innerHTML = '<div class="exercise-option disabled">No exercises found</div>';
+                }
+                return;
+            }
+
+            dropdown.innerHTML = exercises.map(ex => `
+                <div class="exercise-option" data-id="${ex.id}" data-name="${ex.name.replace(/"/g, '&quot;')}"
+                     onclick="selectStationExercise(this, ${ex.id}, '${ex.name.replace(/'/g, "\\'")}')">
+                    ${ex.name}${ex.equipment_type ? ` <span class="exercise-equipment">(${ex.equipment_type})</span>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function filterStationExercises(input) {
+            const stationRow = input.closest('.station-row');
+            const searchTerm = input.value.toLowerCase();
+            const exercisesJson = stationRow.dataset.exercises;
+
+            if (!exercisesJson) return;
+
+            const exercises = JSON.parse(exercisesJson);
+            const filtered = exercises.filter(ex =>
+                ex.name.toLowerCase().includes(searchTerm)
+            );
+            renderStationDropdown(stationRow, filtered, input.value);
+            showStationDropdown(input);
+        }
+
+        function showStationDropdown(input) {
+            const dropdown = input.closest('.station-exercise-search-container').querySelector('.station-exercise-dropdown');
+            dropdown.classList.remove('hidden');
+        }
+
+        function hideStationDropdown(stationRow) {
+            const dropdown = stationRow.querySelector('.station-exercise-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+
+        function selectStationExercise(optionEl, id, name) {
+            const stationRow = optionEl.closest('.station-row');
+            stationRow.querySelector('.station-exercise-search').value = name;
+            stationRow.querySelector('.station-exercise-id').value = id;
+            hideStationDropdown(stationRow);
+            updateStationPreview(stationRow);
+        }
+
+        function toggleCustomExercise(moreSelect) {
+            const stationRow = moreSelect.closest('.station-row');
+            const moreField = stationRow.querySelector('.station-more-field');
+            const exerciseField = stationRow.querySelector('.station-field-full:not(.station-more-field)');
+
+            if (moreSelect.value === 'Yes') {
+                moreField.classList.remove('hidden');
+                exerciseField.classList.add('hidden');
+                // Clear the main exercise selection
+                stationRow.querySelector('.station-exercise-search').value = '';
+                stationRow.querySelector('.station-exercise-id').value = '';
+                // Load "other" exercises (those NOT matching current filter)
+                loadMoreExercises(stationRow);
+            } else {
+                moreField.classList.add('hidden');
+                exerciseField.classList.remove('hidden');
+                // Clear more search
+                const moreSearch = stationRow.querySelector('.station-more-search');
+                if (moreSearch) moreSearch.value = '';
+            }
+        }
+
+        async function loadMoreExercises(stationRow) {
+            const equipmentType = stationRow.querySelector('.station-equipment').value;
+
+            // Get all exercises
+            if (!allExercisesCache['all']) {
+                const data = await api.getExercises({});
+                allExercisesCache['all'] = data.exercises;
+            }
+
+            const allExercises = allExercisesCache['all'];
+
+            // Filter to show exercises NOT matching the selected equipment
+            let moreExercises;
+            if (equipmentType) {
+                moreExercises = allExercises.filter(ex => ex.equipment_type !== equipmentType);
+            } else {
+                // If "All" is selected, show all exercises in the "more" dropdown
+                moreExercises = allExercises;
+            }
+
+            stationRow.dataset.moreExercises = JSON.stringify(moreExercises);
+            renderMoreDropdown(stationRow, moreExercises);
+        }
+
+        function renderMoreDropdown(stationRow, exercises, searchTerm = '') {
+            const dropdown = stationRow.querySelector('.station-more-dropdown');
+            if (!dropdown) return;
+
+            if (exercises.length === 0) {
+                if (searchTerm.trim()) {
+                    dropdown.innerHTML = `
+                        <div class="exercise-option disabled">No exercises found</div>
+                        <div class="exercise-option create-new" onclick="createNewExercise(this, '${searchTerm.replace(/'/g, "\\'")}')">
+                            <span class="create-icon">+</span> Add "${searchTerm}" to library
+                        </div>
+                    `;
+                } else {
+                    dropdown.innerHTML = '<div class="exercise-option disabled">No other exercises found</div>';
+                }
+                return;
+            }
+
+            dropdown.innerHTML = exercises.map(ex => `
+                <div class="exercise-option" data-id="${ex.id}" data-name="${ex.name.replace(/"/g, '&quot;')}"
+                     onclick="selectMoreExercise(this, ${ex.id}, '${ex.name.replace(/'/g, "\\'")}')">
+                    ${ex.name}${ex.equipment_type ? ` <span class="exercise-equipment">(${ex.equipment_type})</span>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function filterMoreExercises(input) {
+            const stationRow = input.closest('.station-row');
+            const searchTerm = input.value.toLowerCase();
+            const exercisesJson = stationRow.dataset.moreExercises;
+
+            if (!exercisesJson) return;
+
+            const exercises = JSON.parse(exercisesJson);
+            const filtered = exercises.filter(ex =>
+                ex.name.toLowerCase().includes(searchTerm)
+            );
+            renderMoreDropdown(stationRow, filtered, input.value);
+            showMoreDropdown(input);
+        }
+
+        function showMoreDropdown(input) {
+            const dropdown = input.closest('.station-exercise-search-container').querySelector('.station-more-dropdown');
+            if (dropdown) dropdown.classList.remove('hidden');
+        }
+
+        function selectMoreExercise(optionEl, id, name) {
+            const stationRow = optionEl.closest('.station-row');
+            stationRow.querySelector('.station-more-search').value = name;
+            stationRow.querySelector('.station-exercise-id').value = id;
+            const dropdown = stationRow.querySelector('.station-more-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            updateStationPreview(stationRow);
+        }
+
+        async function createNewExercise(element, exerciseName) {
+            const stationRow = element.closest('.station-row');
+            const equipmentType = stationRow.querySelector('.station-equipment').value;
+
+            // Navigate to library page with pre-filled data
+            const params = new URLSearchParams();
+            params.set('newExercise', exerciseName);
+            if (equipmentType) params.set('equipment', equipmentType);
+
+            window.open(`/library.html?${params.toString()}`, '_blank');
+            showToast('Opening library to create new exercise...', 'info');
+        }
+
+        function renumberStations() {
+            const stations = document.querySelectorAll('.station-row');
+            stations.forEach((station, i) => {
+                station.querySelector('.station-number').textContent = i + 1;
+            });
+            stationCount = stations.length;
+        }
+
+        let currentPlanData = null; // Store current plan for copy functionality
+
+        async function loadPlanForDate() {
+            const date = document.getElementById('plan-date').value;
+            if (!date) return;
+
+            try {
+                const data = await api.getPlan(date);
+                if (data.plan) {
+                    currentPlanData = data; // Store for copy
+                    document.getElementById('copy-plan-btn').style.display = '';
+
+                    document.getElementById('plan-theme').value = data.plan.theme;
+                    document.getElementById('plan-type').value = data.plan.workout_type || '';
+                    document.getElementById('plan-branch').value = data.plan.branch || '';
+                    document.getElementById('plan-description').value = data.plan.description || '';
+
+                    // Load stations
+                    const container = document.getElementById('stations-container');
+                    container.innerHTML = '';
+                    stationCount = 0;
+
+                    if (data.stations && data.stations.length > 0) {
+                        data.stations.forEach((s, i) => {
+                            addStation({
+                                exercise_name: s.exercise_name,
+                                set_arrangement: s.set_arrangement,
+                                station_time: s.station_time,
+                                notes: s.notes
+                            }, i === 0); // First station expanded
+                        });
+                    } else {
+                        for (let i = 0; i < 3; i++) addStation({}, i === 0);
+                    }
+                } else {
+                    currentPlanData = null;
+                    document.getElementById('copy-plan-btn').style.display = 'none';
+
+                    // Reset form for new plan
+                    document.getElementById('plan-branch').value = '';
+                    document.getElementById('plan-description').value = '';
+                    const container = document.getElementById('stations-container');
+                    container.innerHTML = '';
+                    stationCount = 0;
+                    for (let i = 0; i < 3; i++) addStation({}, i === 0);
+                }
+            } catch (error) {
+                console.error('Error loading plan:', error);
+                showToast('Error loading plan: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        function copyPlanToToday() {
+            if (!currentPlanData) {
+                showToast('No plan to copy', 'error');
+                return;
+            }
+
+            // Set date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('plan-date').value = today;
+
+            // Keep all other values (theme, type, branch, description are already filled)
+            // The stations are already loaded
+
+            // Clear currentPlanData so we don't overwrite the existing plan
+            currentPlanData = null;
+            document.getElementById('copy-plan-btn').style.display = 'none';
+
+            showToast('Plan copied to today. Click Save to create.', 'info');
+        }
+
+        async function savePlan(e) {
+            e.preventDefault();
+
+            const stations = [];
+            document.querySelectorAll('.station-row').forEach((row, i) => {
+                // Get exercise name from search input or more search field
+                const moreFilter = row.querySelector('.station-more').value;
+                let exerciseName = '';
+
+                if (moreFilter === 'Yes') {
+                    // Using "more" exercises dropdown
+                    const moreSearch = row.querySelector('.station-more-search');
+                    exerciseName = moreSearch ? moreSearch.value.trim() : '';
+                } else {
+                    // Using main exercise dropdown
+                    exerciseName = row.querySelector('.station-exercise-search').value.trim();
+                }
+
+                if (exerciseName) {
+                    stations.push({
+                        station_number: i + 1,
+                        exercise_name: exerciseName,
+                        set_arrangement: row.querySelector('.station-sets').value,
+                        station_time: row.querySelector('.station-time').value,
+                        notes: row.querySelector('.station-notes').value || null,
+                    });
+                }
+            });
+
+            const planData = {
+                plan_date: document.getElementById('plan-date').value,
+                theme: document.getElementById('plan-theme').value,
+                workout_type: document.getElementById('plan-type').value || null,
+                branch: document.getElementById('plan-branch').value || null,
+                description: document.getElementById('plan-description').value || null,
+                stations: stations,
+            };
+
+            try {
+                await api.createPlan(planData);
+                showToast('Plan saved!', 'success');
+                loadRecentPlans();
+                loadBranchHistory(); // Refresh branch history with new value
+                loadThemeHistory(); // Refresh theme history with new value
+            } catch (error) {
+                console.error('Error saving plan:', error);
+                showToast('Error saving plan: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function deletePlan() {
+            const date = document.getElementById('plan-date').value;
+            if (!confirm(`Delete plan for ${date}?`)) return;
+
+            try {
+                await api.deletePlan(date);
+                showToast('Plan deleted', 'success');
+                loadPlanForDate();
+                loadRecentPlans();
+            } catch (error) {
+                console.error('Error deleting plan:', error);
+                showToast('Error deleting plan: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        let allRecentPlans = []; // Cache all plans for filtering
+
+        async function loadRecentPlans() {
+            const container = document.getElementById('recent-plans');
+            const themeFilter = document.getElementById('theme-filter').value;
+
+            try {
+                // Load more plans for filtering (50 instead of 5)
+                const data = await api.getPlans(50);
+                allRecentPlans = data.plans || [];
+
+                // Update theme filter dropdown with unique themes
+                updateThemeFilterDropdown(allRecentPlans);
+
+                // Filter by theme if selected
+                let filteredPlans = allRecentPlans;
+                if (themeFilter) {
+                    filteredPlans = allRecentPlans.filter(p => p.theme === themeFilter);
+                }
+
+                // Limit to 10 for display
+                const displayPlans = filteredPlans.slice(0, 10);
+
+                if (displayPlans.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No plans found</p>';
+                    return;
+                }
+
+                container.innerHTML = displayPlans.map(p => `
+                    <div class="plan-item" onclick="loadPlan('${p.plan_date}')">
+                        <div class="plan-header">
+                            <strong>${formatDate(p.plan_date)}</strong>
+                            <span class="plan-theme">${p.theme}</span>
+                        </div>
+                        ${p.stations && p.stations.length > 0 ? `
+                            <div class="plan-stations">
+                                ${p.stations.slice(0, 3).map(s => s.exercise_name).join(' • ')}
+                                ${p.stations.length > 3 ? `<span class="more">+${p.stations.length - 3} more</span>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } catch (error) {
+                container.innerHTML = '<p class="error">Error loading plans</p>';
+            }
+        }
+
+        function updateThemeFilterDropdown(plans) {
+            const themeFilter = document.getElementById('theme-filter');
+            const currentValue = themeFilter.value;
+
+            // Get unique themes
+            const themes = new Set();
+            plans.forEach(p => {
+                if (p.theme && p.theme.trim()) {
+                    themes.add(p.theme.trim());
+                }
+            });
+
+            const sortedThemes = Array.from(themes).sort();
+
+            themeFilter.innerHTML = '<option value="">All Themes</option>' +
+                sortedThemes.map(t => `<option value="${t}"${t === currentValue ? ' selected' : ''}>${t}</option>`).join('');
+        }
+
+        function loadPlan(date) {
+            document.getElementById('plan-date').value = date;
+            loadPlanForDate();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function loadBranchHistory() {
+            try {
+                // Get more plans to extract unique branches
+                const data = await api.getPlans(50);
+                const branches = new Set();
+
+                data.plans.forEach(p => {
+                    if (p.branch && p.branch.trim()) {
+                        branches.add(p.branch.trim());
+                    }
+                });
+
+                branchHistory = Array.from(branches).sort();
+
+                // Populate the datalist
+                const datalist = document.getElementById('branch-history');
+                datalist.innerHTML = branchHistory.map(b =>
+                    `<option value="${b}">`
+                ).join('');
+            } catch (error) {
+                console.error('Error loading branch history:', error);
+            }
+        }
+
+        async function loadThemeHistory() {
+            try {
+                // Get plans to extract unique themes and count usage
+                const data = await api.getPlans(50);
+                const themes = new Set();
+                themeCounts = {};
+
+                data.plans.forEach(p => {
+                    if (p.theme && p.theme.trim()) {
+                        const theme = p.theme.trim();
+                        themes.add(theme);
+                        themeCounts[theme] = (themeCounts[theme] || 0) + 1;
+                    }
+                });
+
+                themeHistory = Array.from(themes);
+
+                // Render the theme dropdown with all themes (constants + saved), sorted by count
+                renderThemeDropdown(getAllThemes());
+            } catch (error) {
+                console.error('Error loading theme history:', error);
+            }
+        }
+    </script>
+</body>
+</html>

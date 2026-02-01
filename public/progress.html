@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#64B5F6">
+    <title>Progress - BFT Tracker</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">BFT Tracker</div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links" id="nav-links">
+            <a href="/" class="nav-link">Log Workout</a>
+            <a href="/plan.html" class="nav-link">Plan</a>
+            <a href="/library.html" class="nav-link">Library</a>
+            <a href="/progress.html" class="nav-link active">Progress</a>
+            <a href="/all-workouts.html" class="nav-link">Workout Records</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>Progress</h1>
+
+        <div class="card">
+            <div class="form-row-compact">
+                <div class="form-group">
+                    <label for="category-filter">Category</label>
+                    <select id="category-filter" onchange="loadExercises()">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="exercise-select">Exercise</label>
+                    <select id="exercise-select" onchange="loadProgression()">
+                        <option value="">Select exercise...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview chart (shown when no exercise selected) -->
+        <div class="card" id="overview-container">
+            <h2>Most Logged Exercises</h2>
+            <div class="chart-wrapper">
+                <canvas id="overview-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Exercise-specific chart (shown when exercise selected) -->
+        <div class="card" id="chart-container" style="display: none;">
+            <div class="progress-header">
+                <h2 id="exercise-name">Exercise Progress</h2>
+                <button class="btn btn-sm btn-success" id="log-exercise-btn" onclick="goToLogWorkout()">+1</button>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="progress-chart"></canvas>
+            </div>
+            <div class="chart-legend">
+                <label><input type="checkbox" id="show-weight" checked onchange="updateChart()"> Weight (kg)</label>
+            </div>
+        </div>
+
+        <div class="card" id="stats-container" style="display: none;">
+            <h3>Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Total Workouts</span>
+                    <span class="stat-value" id="stat-total">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Max Weight</span>
+                    <span class="stat-value" id="stat-max-weight">0 kg</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Latest</span>
+                    <span class="stat-value" id="stat-latest">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="history-container" style="display: none;">
+            <h3>Workout History</h3>
+            <div id="workout-history"></div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>BFT Workout Tracker v2.0 | Cloudflare Workers + D1</p>
+    </footer>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/utils.js"></script>
+    <script>
+        let chart = null;
+        let overviewChart = null;
+        let progressionData = [];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadConstants();
+            await loadExercises();
+
+            // Check for incoming filter from All Workouts page
+            const progressExerciseId = sessionStorage.getItem('progressExerciseId');
+            if (progressExerciseId) {
+                document.getElementById('exercise-select').value = progressExerciseId;
+                sessionStorage.removeItem('progressExerciseId');
+                sessionStorage.removeItem('progressExerciseName');
+                loadProgression();
+            } else {
+                // Show overview chart when no exercise is selected
+                await loadOverview();
+            }
+
+            // Mobile nav
+            const navToggle = document.getElementById('nav-toggle');
+            const navLinks = document.getElementById('nav-links');
+            if (navToggle) {
+                navToggle.addEventListener('click', () => {
+                    navToggle.classList.toggle('active');
+                    navLinks.classList.toggle('show');
+                });
+            }
+        });
+
+        async function loadOverview() {
+            try {
+                // Get all exercises with workout counts
+                const data = await api.getExercises({});
+                const exercisesWithLogs = data.exercises
+                    .filter(ex => ex.workout_count > 0)
+                    .sort((a, b) => b.workout_count - a.workout_count)
+                    .slice(0, 10);
+
+                if (exercisesWithLogs.length === 0) {
+                    document.getElementById('overview-container').innerHTML = `
+                        <h2>Most Logged Exercises</h2>
+                        <p class="text-muted">No workout logs yet. Start logging to see your progress!</p>
+                    `;
+                    return;
+                }
+
+                renderOverviewChart(exercisesWithLogs);
+            } catch (error) {
+                console.error('Error loading overview:', error);
+            }
+        }
+
+        function renderOverviewChart(exercises) {
+            const ctx = document.getElementById('overview-chart').getContext('2d');
+
+            if (overviewChart) overviewChart.destroy();
+
+            overviewChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: exercises.map(ex => ex.name.length > 20 ? ex.name.substring(0, 18) + '...' : ex.name),
+                    datasets: [{
+                        label: 'Workout Logs',
+                        data: exercises.map(ex => ex.workout_count),
+                        backgroundColor: 'rgba(100, 181, 246, 0.7)',
+                        borderColor: 'rgba(100, 181, 246, 1)',
+                        borderWidth: 1,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Number of Logs' },
+                            ticks: {
+                                stepSize: 1
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                font: { size: 11 }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const exerciseId = exercises[index].id;
+                            document.getElementById('exercise-select').value = exerciseId;
+                            loadProgression();
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadConstants() {
+            try {
+                const data = await api.getConstants();
+                document.getElementById('category-filter').innerHTML =
+                    '<option value="">All Categories</option>' +
+                    data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading constants:', error);
+                showToast('Error loading constants: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadExercises() {
+            const category = document.getElementById('category-filter').value;
+
+            try {
+                const params = {};
+                if (category) params.category = category;
+
+                const data = await api.getExercises(params);
+                const select = document.getElementById('exercise-select');
+                select.innerHTML = '<option value="">Select exercise...</option>' +
+                    data.exercises.map(ex => `<option value="${ex.id}">${ex.name}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading exercises:', error);
+                showToast('Error loading exercises: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadProgression() {
+            const exerciseId = document.getElementById('exercise-select').value;
+            if (!exerciseId) {
+                // Show overview, hide exercise-specific sections
+                document.getElementById('overview-container').style.display = 'block';
+                document.getElementById('chart-container').style.display = 'none';
+                document.getElementById('stats-container').style.display = 'none';
+                document.getElementById('history-container').style.display = 'none';
+                loadOverview();
+                return;
+            }
+
+            // Hide overview, show exercise-specific sections
+            document.getElementById('overview-container').style.display = 'none';
+
+            try {
+                const data = await api.getProgression(exerciseId);
+                progressionData = data.progression;
+
+                const exerciseName = document.getElementById('exercise-select').selectedOptions[0].text;
+                document.getElementById('exercise-name').textContent = exerciseName + ' Progress';
+
+                // Always show the header with +1 button
+                document.getElementById('chart-container').style.display = 'block';
+
+                if (progressionData.length === 0) {
+                    // No logs yet - show message but keep +1 button visible
+                    document.getElementById('progress-chart').parentElement.innerHTML =
+                        '<p class="text-muted">No workout data yet. Click +1 to log your first workout!</p>' +
+                        '<canvas id="progress-chart"></canvas>';
+                    document.getElementById('stats-container').style.display = 'none';
+                    document.getElementById('history-container').style.display = 'none';
+                    return;
+                }
+
+                updateChart();
+                updateStats();
+                updateHistory();
+
+                document.getElementById('stats-container').style.display = 'block';
+                document.getElementById('history-container').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading progression:', error);
+                showToast('Error loading progression: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        function updateChart() {
+            const showWeight = document.getElementById('show-weight').checked;
+
+            const labels = progressionData.map(d => formatDate(d.workout_date));
+            const datasets = [];
+
+            if (showWeight) {
+                datasets.push({
+                    label: 'Weight (kg)',
+                    data: progressionData.map(d => d.weight_kg),
+                    borderColor: '#4CAF50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    tension: 0.1,
+                });
+            }
+
+            if (chart) chart.destroy();
+
+            const ctx = document.getElementById('progress-chart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: showWeight,
+                            position: 'left',
+                            title: { display: true, text: 'Weight (kg)' },
+                        },
+                    },
+                },
+            });
+        }
+
+        function updateStats() {
+            const total = progressionData.length;
+            const maxWeight = Math.max(...progressionData.map(d => d.weight_kg));
+            const latest = progressionData[progressionData.length - 1];
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-max-weight').textContent = maxWeight + ' kg';
+            document.getElementById('stat-latest').textContent = latest ?
+                `${latest.weight_kg} kg` : '-';
+        }
+
+        function updateHistory() {
+            const container = document.getElementById('workout-history');
+            const reversed = [...progressionData].reverse();
+
+            container.innerHTML = reversed.slice(0, 10).map(w => `
+                <div class="history-item history-item-clickable" onclick="goToWorkoutRecord(${w.id})">
+                    <span class="history-date">${formatDate(w.workout_date)}</span>
+                    <span class="history-details">${w.weight_kg} kg</span>
+                </div>
+            `).join('');
+        }
+
+        function goToWorkoutRecord(workoutId) {
+            sessionStorage.setItem('viewWorkoutId', workoutId);
+            window.location.href = '/all-workouts.html';
+        }
+
+        function goToLogWorkout() {
+            const exerciseId = document.getElementById('exercise-select').value;
+            const exerciseName = document.getElementById('exercise-select').selectedOptions[0].text;
+            if (exerciseId) {
+                sessionStorage.setItem('logExerciseId', exerciseId);
+                sessionStorage.setItem('logExerciseName', exerciseName);
+                window.location.href = '/';
+            }
+        }
+    </script>
+</body>
+</html>

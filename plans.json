@@ -1,0 +1,33 @@
+[
+  {
+    "results": [
+      {
+        "id": 2,
+        "plan_date": "2026-01-31",
+        "theme": "Strength Endurance",
+        "workout_type": "Superset",
+        "description": "1 cardio station each, 3 strengths ex. All 3 groups of exercise, 3 sets alternate with partner (total 6 sets per group).",
+        "created_at": "2026-02-01 04:42:27",
+        "branch": "Ang Mo Kio"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "APAC",
+      "served_by_colo": "SIN",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 0.6039
+      },
+      "duration": 0.6039,
+      "changes": 0,
+      "last_row_id": 0,
+      "changed_db": false,
+      "size_after": 376832,
+      "rows_read": 1,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]
