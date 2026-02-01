@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#64B5F6">
+    <title>Log Workout - BFT Tracker</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">BFT Tracker</div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="nav-links" id="nav-links">
+            <a href="/" class="nav-link active">Log Workout</a>
+            <a href="/plan.html" class="nav-link">Plan</a>
+            <a href="/library.html" class="nav-link">Library</a>
+            <a href="/progress.html" class="nav-link">Progress</a>
+            <a href="/all-workouts.html" class="nav-link">Workout Records</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>Log Workout</h1>
+
+        <div class="card">
+            <form id="workout-form" autocomplete="off">
+                <div class="form-row-compact">
+                    <div class="form-group">
+                        <label for="category">Workout Type</label>
+                        <select id="category" name="category" onchange="loadExercises()" autocomplete="off">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="equipment-filter">Equipment</label>
+                        <select id="equipment-filter" onchange="loadExercises()" autocomplete="off">
+                            <option value="">All</option>
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="exercise-label-row">
+                        <label for="exercise-search">Exercise</label>
+                        <a href="/library.html" class="browse-library-link">Browse Library</a>
+                    </div>
+                    <div class="exercise-search-container">
+                        <input type="text" id="exercise-search" placeholder="Type to search exercises..."
+                            oninput="filterExercises()" onfocus="showExerciseDropdown()" autocomplete="off">
+                        <div id="exercise-dropdown" class="exercise-dropdown hidden"></div>
+                    </div>
+                    <input type="hidden" id="exercise" name="exercise">
+                </div>
+
+                <div class="form-group add-exercise-group">
+                    <label for="custom-exercise" class="add-exercise-label" onclick="toggleAddExercise()">Or Add New Exercise <span class="add-exercise-arrow">▶</span></label>
+                    <input type="text" id="custom-exercise" name="custom_exercise" placeholder="Type new exercise name..." class="hidden">
+                </div>
+
+                <div id="exercise-image-container" class="exercise-image-container hidden">
+                    <img id="exercise-image" src="" alt="Exercise">
+                </div>
+
+                <div id="suggested-weight-container" class="suggested-weight hidden">
+                    <span>Last workout: <strong id="suggested-weight"></strong></span>
+                </div>
+
+                <div class="form-row-preset">
+                    <div class="form-group preset-group">
+                        <label for="preset">Preset Sets</label>
+                        <select id="preset" name="preset" onchange="applyPreset()" autocomplete="off">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                    <div class="form-group method-group">
+                        <label for="weight-method">Weight Method</label>
+                        <select id="weight-method" name="weight_method" autocomplete="off">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Standard input (Custom same rep per set) -->
+                <div id="standard-input">
+                    <div class="form-row-inline">
+                        <div class="form-group">
+                            <label for="weight">Weight (kg)</label>
+                            <select id="weight" name="weight">
+                                <option value="0">0</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="reps">Reps</label>
+                            <input type="number" id="reps" name="reps" value="8" min="1" max="100" inputmode="numeric">
+                        </div>
+                        <div class="form-group">
+                            <label for="sets">Sets</label>
+                            <input type="number" id="sets" name="sets" value="4" min="1" max="20" inputmode="numeric">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Variable reps input (Custom variable reps) -->
+                <div id="variable-input" class="hidden">
+                    <div class="form-group">
+                        <label for="variable-sets">Number of Sets</label>
+                        <select id="variable-sets" onchange="updateVariableInputs()">
+                            <option value="3">3 sets</option>
+                            <option value="4" selected>4 sets</option>
+                            <option value="5">5 sets</option>
+                            <option value="6">6 sets</option>
+                        </select>
+                    </div>
+                    <div class="variable-row">
+                        <div class="form-group">
+                            <div class="variable-label-row">
+                                <label>Reps per Set (or side)</label>
+                                <button type="button" class="btn-adj" onclick="adjustAllReps()">adj</button>
+                            </div>
+                            <div id="variable-reps" class="variable-inputs">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="variable-row">
+                        <div class="form-group">
+                            <div class="variable-label-row">
+                                <label>Weight per Set (kg)</label>
+                                <button type="button" class="btn-adj" onclick="adjustAllWeights()">adj</button>
+                            </div>
+                            <div id="variable-weights" class="variable-inputs">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row-date-theme">
+                    <div class="form-group date-group">
+                        <label for="workout-date">Date</label>
+                        <input type="date" id="workout-date" name="workout_date">
+                    </div>
+                    <div class="form-group theme-group">
+                        <label for="workout-theme">Theme</label>
+                        <select id="workout-theme" name="workout_theme">
+                            <option value="">-</option>
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="notes-header">
+                        <label for="notes">Notes (optional)</label>
+                        <button type="button" class="tag-btn" id="with-cadence-btn" onclick="toggleCadence()">With cadence</button>
+                        <input type="hidden" id="with-cadence-toggle" name="tags" value="">
+                    </div>
+                    <textarea id="notes" name="notes" rows="2" placeholder="e.g., '3rd set struggled'"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Log Workout</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="recent-workouts-header">
+                <h2>Recent Workouts</h2>
+                <div class="recent-workouts-controls">
+                    <label class="toggle-label" id="filter-exercise-toggle-label">
+                        <input type="checkbox" id="filter-exercise-toggle" checked onchange="loadRecentWorkouts()">
+                        <span>Selected only</span>
+                    </label>
+                    <button type="button" class="btn btn-sm btn-outline" id="progress-link-btn" onclick="goToExerciseProgress()" style="display: none;">Progress</button>
+                </div>
+            </div>
+            <div id="recent-workouts">
+                <p class="loading">Loading...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Export</h2>
+            <button id="export-btn" class="btn btn-secondary btn-block">Download Workout Logs CSV</button>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>BFT Workout Tracker v2.0 | Cloudflare Workers + D1</p>
+    </footer>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/utils.js"></script>
+    <script>
+        let CONSTANTS = {};
+        let allExercisesData = [];      // Exercises filtered by current category/equipment (for suggestions)
+        let allExercisesGlobal = [];    // All exercises in the system (for search)
+        let currentEquipmentType = 'BB';
+        let currentWeightOptions = [0];
+        let isVariableMode = false;
+        let isSubmitting = false;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Load constants from API
+            await loadConstants();
+
+            // Set default date
+            document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
+
+            // Load exercises
+            await loadExercises();
+
+            // Check for exercise ID from Library page (+1 button) or Progress page
+            const logExerciseId = sessionStorage.getItem('logExerciseId');
+            const logExerciseCategory = sessionStorage.getItem('logExerciseCategory');
+            if (logExerciseId) {
+                sessionStorage.removeItem('logExerciseId');
+                sessionStorage.removeItem('logExerciseCategory');
+                sessionStorage.removeItem('logExerciseName');
+
+                // Set category if provided
+                if (logExerciseCategory) {
+                    document.getElementById('category').value = logExerciseCategory;
+                }
+
+                // Find and select the exercise
+                const exercise = allExercisesGlobal.find(ex => ex.id === parseInt(logExerciseId));
+                if (exercise) {
+                    await selectExercise(exercise.id, exercise.name, exercise.equipment_type, exercise.image_url);
+                }
+            }
+
+            loadRecentWorkouts();
+
+            // Initialize variable inputs
+            updateVariableInputs();
+
+            // Form submission
+            document.getElementById('workout-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await submitWorkout();
+            });
+
+            // Export button
+            document.getElementById('export-btn').addEventListener('click', exportWorkouts);
+
+            // Mobile nav toggle
+            const navToggle = document.getElementById('nav-toggle');
+            const navLinks = document.getElementById('nav-links');
+            if (navToggle && navLinks) {
+                navToggle.addEventListener('click', function() {
+                    navToggle.classList.toggle('active');
+                    navLinks.classList.toggle('show');
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const container = document.querySelector('.exercise-search-container');
+                if (container && !container.contains(e.target)) {
+                    hideExerciseDropdown();
+                }
+            });
+        });
+
+        async function loadConstants() {
+            try {
+                const data = await api.getConstants();
+                CONSTANTS = data;
+
+                // Populate category dropdown
+                const categorySelect = document.getElementById('category');
+                categorySelect.innerHTML = data.categories.map(cat =>
+                    `<option value="${cat}">${cat}</option>`
+                ).join('');
+
+                // Populate equipment filter
+                const equipmentSelect = document.getElementById('equipment-filter');
+                equipmentSelect.innerHTML = '<option value="">All</option>' +
+                    data.equipment_types.map(eq => `<option value="${eq}">${eq}</option>`).join('');
+
+                // Populate preset sets (with "Custom (variable reps)" as default)
+                const presetSelect = document.getElementById('preset');
+                const presetNames = Object.keys(data.preset_sets);
+                presetSelect.innerHTML = presetNames.map(name =>
+                    `<option value="${name}"${name === 'Custom (variable reps)' ? ' selected' : ''}>${name}</option>`
+                ).join('');
+
+                // Apply the default preset (Custom variable reps)
+                if (presetNames.includes('Custom (variable reps)')) {
+                    presetSelect.value = 'Custom (variable reps)';
+                    applyPreset();
+                }
+
+                // Populate weight methods
+                const methodSelect = document.getElementById('weight-method');
+                methodSelect.innerHTML = data.weight_methods.map(method =>
+                    `<option value="${method}">${method}</option>`
+                ).join('');
+
+                // Populate workout themes
+                const themeSelect = document.getElementById('workout-theme');
+                themeSelect.innerHTML = '<option value="">-</option>' +
+                    data.workout_themes.map(theme => `<option value="${theme}">${theme}</option>`).join('');
+
+            } catch (error) {
+                console.error('Error loading constants:', error);
+                showToast('Error loading constants: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadExercises() {
+            const category = document.getElementById('category').value;
+            const equipmentType = document.getElementById('equipment-filter').value;
+
+            try {
+                // Load filtered exercises (for suggestions based on current category/equipment)
+                const params = { category };
+                if (equipmentType) params.equipment_type = equipmentType;
+
+                const data = await api.getExercises(params);
+                allExercisesData = data.exercises;
+
+                // Load all exercises (for global search) - only once
+                if (allExercisesGlobal.length === 0) {
+                    const allData = await api.getExercises({});
+                    allExercisesGlobal = allData.exercises;
+                }
+
+                document.getElementById('exercise').value = '';
+                document.getElementById('exercise-search').value = '';
+
+                renderExerciseDropdown(allExercisesData);
+            } catch (error) {
+                console.error('Error loading exercises:', error);
+                showToast('Error loading exercises: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        function renderExerciseDropdown(exercises, searchTerm = '') {
+            const dropdown = document.getElementById('exercise-dropdown');
+
+            if (exercises.length === 0) {
+                // No matches - show "add to library" option if user has typed something
+                if (searchTerm.trim()) {
+                    dropdown.innerHTML = `
+                        <div class="exercise-option disabled">No exercises found</div>
+                        <div class="exercise-option create-new" onclick="addExerciseToLibrary('${searchTerm.replace(/'/g, "\\'")}')">
+                            <span class="create-icon">+</span> Add "${searchTerm}" to library
+                        </div>
+                    `;
+                } else {
+                    dropdown.innerHTML = '<div class="exercise-option disabled">No exercises found</div>';
+                }
+                return;
+            }
+
+            let html = exercises.map(ex => `
+                <div class="exercise-option" data-id="${ex.id}">
+                    <span class="exercise-option-name" onclick="selectExercise(${ex.id}, '${ex.name.replace(/'/g, "\\'")}', '${ex.equipment_type || 'default'}', '${ex.image_url || ''}')">${ex.name}</span>
+                    <span class="exercise-category-tags">${getCategoryTags(ex)}</span>
+                    <a href="/library.html?exercise=${ex.id}" class="exercise-lib-link" onclick="event.stopPropagation()">lib</a>
+                </div>
+            `).join('');
+
+            // Also add "create new" option if search term doesn't exactly match any exercise
+            if (searchTerm.trim() && !exercises.some(ex => ex.name.toLowerCase() === searchTerm.toLowerCase())) {
+                html += `
+                    <div class="exercise-option create-new" onclick="addExerciseToLibrary('${searchTerm.replace(/'/g, "\\'")}')">
+                        <span class="create-icon">+</span> Add "${searchTerm}" to library
+                    </div>
+                `;
+            }
+
+            dropdown.innerHTML = html;
+        }
+
+        function getCategoryTags(exercise) {
+            const tagMap = {
+                'Upper Body': 'UB',
+                'Lower Body': 'LB',
+                'Whole Body': 'W',
+                'Cardio HIIT': 'C'
+            };
+
+            const tags = [];
+
+            // Add primary category
+            if (exercise.category && tagMap[exercise.category]) {
+                tags.push(tagMap[exercise.category]);
+            }
+
+            // Add additional categories if present
+            if (exercise.categories) {
+                const cats = exercise.categories.split(',').map(c => c.trim());
+                cats.forEach(cat => {
+                    if (tagMap[cat] && !tags.includes(tagMap[cat])) {
+                        tags.push(tagMap[cat]);
+                    }
+                });
+            }
+
+            return tags.join('/');
+        }
+
+        async function addExerciseToLibrary(exerciseName) {
+            const category = document.getElementById('category').value;
+            const equipmentType = document.getElementById('equipment-filter').value || 'BB';
+
+            try {
+                const result = await api.createExercise({
+                    exercise_name: exerciseName,
+                    category: category,
+                    equipment_type: equipmentType
+                });
+
+                showToast(`"${exerciseName}" added to library!`, 'success');
+
+                // Reload exercises and select the new one
+                const allData = await api.getExercises({});
+                allExercisesGlobal = allData.exercises;
+
+                const newExercise = allExercisesGlobal.find(ex => ex.id === result.id);
+                if (newExercise) {
+                    await selectExercise(newExercise.id, newExercise.name, newExercise.equipment_type, newExercise.image_url);
+                }
+
+                hideExerciseDropdown();
+            } catch (error) {
+                showToast('Error adding exercise: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        function filterExercises() {
+            const searchTerm = document.getElementById('exercise-search').value.trim();
+            const searchTermLower = searchTerm.toLowerCase();
+
+            if (searchTerm === '') {
+                // No search term: show filtered exercises (based on category/equipment)
+                renderExerciseDropdown(allExercisesData, '');
+            } else {
+                // Search term: search ALL exercises globally
+                const filtered = allExercisesGlobal.filter(ex =>
+                    ex.name.toLowerCase().includes(searchTermLower)
+                );
+                renderExerciseDropdown(filtered, searchTerm);
+            }
+            showExerciseDropdown();
+        }
+
+        function showExerciseDropdown() {
+            document.getElementById('exercise-dropdown').classList.remove('hidden');
+        }
+
+        function hideExerciseDropdown() {
+            document.getElementById('exercise-dropdown').classList.add('hidden');
+        }
+
+        function toggleAddExercise() {
+            const input = document.getElementById('custom-exercise');
+            const arrow = document.querySelector('.add-exercise-arrow');
+            if (input.classList.contains('hidden')) {
+                input.classList.remove('hidden');
+                arrow.textContent = '▼';
+                input.focus();
+            } else {
+                input.classList.add('hidden');
+                arrow.textContent = '▶';
+            }
+        }
+
+        let currentSelectedExerciseId = null;
+        let currentSelectedExerciseName = null;
+
+        async function selectExercise(id, name, equipmentType, imageUrl) {
+            document.getElementById('exercise').value = id;
+            document.getElementById('exercise-search').value = name;
+            currentEquipmentType = equipmentType || 'BB';
+            currentSelectedExerciseId = id;
+            currentSelectedExerciseName = name;
+            hideExerciseDropdown();
+
+            // Show Progress button
+            document.getElementById('progress-link-btn').style.display = '';
+
+            // Get exercise details to check for weight range
+            let weightMin = null;
+            let weightMax = null;
+            try {
+                const exerciseData = await api.getExercise(id);
+                weightMin = exerciseData.weight_min;
+                weightMax = exerciseData.weight_max;
+            } catch (error) {
+                console.error('Error loading exercise details:', error);
+            }
+
+            // Load weight options for this equipment type, filtered by exercise range
+            await loadWeightOptions(equipmentType || 'BB', weightMin, weightMax);
+
+            // Show image if available
+            if (imageUrl) {
+                document.getElementById('exercise-image').src = imageUrl;
+                document.getElementById('exercise-image-container').classList.remove('hidden');
+            } else {
+                document.getElementById('exercise-image-container').classList.add('hidden');
+            }
+
+            // Load suggested weight
+            try {
+                const data = await api.getExerciseLatest(id);
+                if (data.latest) {
+                    document.getElementById('suggested-weight').textContent =
+                        `${data.latest.weight_kg}kg × ${data.latest.reps} reps × ${data.latest.sets} sets`;
+                    document.getElementById('suggested-weight-container').classList.remove('hidden');
+
+                    // Pre-fill with last workout values
+                    document.getElementById('weight').value = data.latest.weight_kg;
+                    document.getElementById('reps').value = data.latest.reps;
+                    document.getElementById('sets').value = data.latest.sets;
+                } else {
+                    document.getElementById('suggested-weight-container').classList.add('hidden');
+                }
+            } catch (error) {
+                document.getElementById('suggested-weight-container').classList.add('hidden');
+            }
+
+            loadRecentWorkouts();
+        }
+
+        async function loadWeightOptions(equipmentType, weightMin = null, weightMax = null) {
+            try {
+                const data = await api.getWeightOptions(equipmentType);
+                const increment = data.increment || 2.5;
+
+                // Generate weight options based on exercise min/max range
+                let options = [];
+
+                if (increment === 0) {
+                    // Bodyweight: only 0
+                    options = [0];
+                } else {
+                    // Use exercise weight range, or defaults if not set
+                    const minWeight = weightMin !== null ? weightMin : 0;
+                    const maxWeight = weightMax !== null ? weightMax : 200;
+
+                    let current = minWeight;
+                    while (current <= maxWeight) {
+                        options.push(Math.round(current * 100) / 100);
+                        current += increment;
+                    }
+
+                    // Ensure we have at least some options
+                    if (options.length === 0) {
+                        options = [0];
+                    }
+                }
+
+                currentWeightOptions = options;
+                const weightSelect = document.getElementById('weight');
+                const currentValue = weightSelect.value;
+
+                weightSelect.innerHTML = options.map(w =>
+                    `<option value="${w}">${w}</option>`
+                ).join('');
+
+                // Restore previous value if it exists in new options
+                if (options.includes(parseFloat(currentValue))) {
+                    weightSelect.value = currentValue;
+                }
+
+                // Update variable weight selects if in variable mode
+                if (isVariableMode) {
+                    updateVariableInputs();
+                }
+            } catch (error) {
+                console.error('Error loading weight options:', error);
+            }
+        }
+
+        function applyPreset() {
+            const presetName = document.getElementById('preset').value;
+            const preset = CONSTANTS.preset_sets[presetName];
+
+            // Preserve current weight value before switching modes
+            let preservedWeight = null;
+            if (isVariableMode) {
+                // Get first weight from variable inputs
+                const firstWeightSelect = document.querySelector('.variable-weight-select');
+                if (firstWeightSelect) {
+                    preservedWeight = firstWeightSelect.value;
+                }
+            } else {
+                // Get weight from standard input
+                preservedWeight = document.getElementById('weight').value;
+            }
+
+            // Check if variable mode
+            if (preset && preset.variable) {
+                isVariableMode = true;
+                document.getElementById('standard-input').classList.add('hidden');
+                document.getElementById('variable-input').classList.remove('hidden');
+                updateVariableInputs(preservedWeight);
+            } else {
+                isVariableMode = false;
+                document.getElementById('standard-input').classList.remove('hidden');
+                document.getElementById('variable-input').classList.add('hidden');
+
+                if (preset) {
+                    document.getElementById('sets').value = preset.sets;
+                    document.getElementById('reps').value = preset.reps;
+                }
+
+                // Update standard weight dropdown with current weight options (respects exercise weight range)
+                const weightSelect = document.getElementById('weight');
+                if (currentWeightOptions.length > 1) {
+                    weightSelect.innerHTML = currentWeightOptions.map(w =>
+                        `<option value="${w}">${w}</option>`
+                    ).join('');
+                }
+
+                // Restore preserved weight if available and valid
+                if (preservedWeight && currentWeightOptions.includes(parseFloat(preservedWeight))) {
+                    weightSelect.value = preservedWeight;
+                }
+            }
+        }
+
+        function updateVariableInputs(preservedWeight = null) {
+            const numSets = parseInt(document.getElementById('variable-sets').value);
+            const weightsContainer = document.getElementById('variable-weights');
+            const repsContainer = document.getElementById('variable-reps');
+
+            // Get current values to preserve them
+            const currentWeights = [];
+            const currentReps = [];
+            weightsContainer.querySelectorAll('select').forEach(sel => currentWeights.push(sel.value));
+            repsContainer.querySelectorAll('input').forEach(inp => currentReps.push(inp.value));
+
+            // If a preserved weight is provided (from mode switch), use it for all sets
+            if (preservedWeight && currentWeights.length === 0) {
+                for (let i = 0; i < numSets; i++) {
+                    currentWeights.push(preservedWeight);
+                }
+            }
+
+            // Build weight options HTML
+            const weightOptionsHtml = currentWeightOptions.map(w =>
+                `<option value="${w}">${w}</option>`
+            ).join('');
+
+            // Generate weight selects
+            let weightsHtml = '<div class="variable-inputs-row">';
+            for (let i = 0; i < numSets; i++) {
+                const defaultWeight = currentWeights[i] || (currentWeightOptions.length > 10 ? currentWeightOptions[10] : currentWeightOptions[0]);
+                weightsHtml += `<select class="variable-weight-select" data-set="${i}">${weightOptionsHtml}</select>`;
+                if (i < numSets - 1) weightsHtml += '<span class="variable-separator">/</span>';
+            }
+            weightsHtml += '</div>';
+            weightsContainer.innerHTML = weightsHtml;
+
+            // Set weight values
+            weightsContainer.querySelectorAll('select').forEach((sel, i) => {
+                if (currentWeights[i] && currentWeightOptions.includes(parseFloat(currentWeights[i]))) {
+                    sel.value = currentWeights[i];
+                } else if (currentWeightOptions.length > 10) {
+                    sel.value = currentWeightOptions[10];
+                }
+            });
+
+            // Generate reps inputs
+            let repsHtml = '<div class="variable-inputs-row">';
+            for (let i = 0; i < numSets; i++) {
+                const defaultRep = currentReps[i] || '6';
+                repsHtml += `<input type="number" class="variable-rep-input" data-set="${i}" value="${defaultRep}" min="1" max="100" inputmode="numeric">`;
+                if (i < numSets - 1) repsHtml += '<span class="variable-separator">/</span>';
+            }
+            repsHtml += '</div>';
+            repsContainer.innerHTML = repsHtml;
+        }
+
+        function getVariableData() {
+            const weights = [];
+            const reps = [];
+            document.querySelectorAll('.variable-weight-select').forEach(sel => weights.push(parseFloat(sel.value)));
+            document.querySelectorAll('.variable-rep-input').forEach(inp => reps.push(parseInt(inp.value)));
+            return { weights, reps };
+        }
+
+        function adjustAllReps() {
+            const repInputs = document.querySelectorAll('.variable-rep-input');
+            if (repInputs.length > 0) {
+                const firstValue = repInputs[0].value;
+                repInputs.forEach(input => {
+                    input.value = firstValue;
+                });
+            }
+        }
+
+        function adjustAllWeights() {
+            const weightSelects = document.querySelectorAll('.variable-weight-select');
+            if (weightSelects.length > 0) {
+                const firstValue = weightSelects[0].value;
+                weightSelects.forEach(select => {
+                    select.value = firstValue;
+                });
+            }
+        }
+
+        function toggleCadence() {
+            const btn = document.getElementById('with-cadence-btn');
+            const toggle = document.getElementById('with-cadence-toggle');
+
+            if (toggle.value === 'with cadence') {
+                toggle.value = '';
+                btn.classList.remove('active');
+            } else {
+                toggle.value = 'with cadence';
+                btn.classList.add('active');
+            }
+        }
+
+        async function submitWorkout() {
+            // Prevent double-submission
+            if (isSubmitting) {
+                return;
+            }
+
+            const exerciseId = document.getElementById('exercise').value;
+            const customExercise = document.getElementById('custom-exercise').value.trim();
+            const category = document.getElementById('category').value;
+
+            if (!exerciseId && !customExercise) {
+                showToast('Please select or enter an exercise', 'error');
+                return;
+            }
+
+            // Disable submit button and set loading state
+            isSubmitting = true;
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+
+            const tags = document.getElementById('with-cadence-toggle').value;
+            let notes = document.getElementById('notes').value;
+
+            let weight_kg, reps, sets;
+
+            if (isVariableMode) {
+                // Variable mode - log with average weight and details in notes
+                const variableData = getVariableData();
+                sets = variableData.weights.length;
+
+                // Calculate average weight
+                const totalWeight = variableData.weights.reduce((a, b) => a + b, 0);
+                weight_kg = Math.round((totalWeight / sets) * 100) / 100;
+
+                // Calculate total reps
+                const totalReps = variableData.reps.reduce((a, b) => a + b, 0);
+                reps = Math.round(totalReps / sets); // Average reps per set
+
+                // Add variable details to notes
+                const weightStr = variableData.weights.join('/');
+                const repStr = variableData.reps.join('/');
+                const variableNote = `[Variable: ${weightStr}kg × ${repStr} reps]`;
+                notes = notes ? `${variableNote} ${notes}` : variableNote;
+            } else {
+                weight_kg = parseFloat(document.getElementById('weight').value);
+                reps = parseInt(document.getElementById('reps').value);
+                sets = parseInt(document.getElementById('sets').value);
+            }
+
+            const workoutData = {
+                exercise_id: exerciseId ? parseInt(exerciseId) : undefined,
+                exercise_name: !exerciseId ? customExercise : undefined,
+                category: category,
+                weight_kg: weight_kg,
+                reps: reps,
+                sets: sets,
+                workout_date: document.getElementById('workout-date').value,
+                notes: notes,
+                tags: tags ? [tags] : []
+            };
+
+            try {
+                await api.createWorkout(workoutData);
+                showToast('Workout logged successfully!', 'success');
+
+                // Reset form
+                document.getElementById('notes').value = '';
+                document.getElementById('with-cadence-toggle').value = '';
+                document.getElementById('with-cadence-btn').classList.remove('active');
+
+                loadRecentWorkouts();
+            } catch (error) {
+                console.error('Error logging workout:', error);
+                showToast('Error logging workout: ' + (error.message || 'Unknown error'), 'error');
+            } finally {
+                // Re-enable submit button
+                isSubmitting = false;
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function goToExerciseProgress() {
+            if (currentSelectedExerciseId) {
+                sessionStorage.setItem('progressExerciseId', currentSelectedExerciseId);
+                sessionStorage.setItem('progressExerciseName', currentSelectedExerciseName);
+                window.location.href = '/progress.html';
+            }
+        }
+
+        function goToWorkoutRecord(workoutId) {
+            // Navigate to Workout Records with the date filter set
+            sessionStorage.setItem('viewWorkoutId', workoutId);
+            window.location.href = '/all-workouts.html';
+        }
+
+        async function loadRecentWorkouts() {
+            const container = document.getElementById('recent-workouts');
+            const filterByExercise = document.getElementById('filter-exercise-toggle').checked;
+            const exerciseId = document.getElementById('exercise').value;
+
+            try {
+                const params = { limit: 10 };
+                if (filterByExercise && exerciseId) {
+                    params.exercise_id = exerciseId;
+                }
+
+                const data = await api.getWorkouts(params);
+
+                if (data.workouts.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No recent workouts</p>';
+                    return;
+                }
+
+                container.innerHTML = data.workouts.map(w => `
+                    <div class="workout-item-compact" onclick="goToWorkoutRecord(${w.id})">
+                        <strong>${w.exercise_name}</strong>
+                        <span class="workout-date">${formatDate(w.workout_date)}</span>
+                    </div>
+                `).join('');
+            } catch (error) {
+                container.innerHTML = '<p class="error">Error loading workouts</p>';
+            }
+        }
+
+        async function exportWorkouts() {
+            try {
+                const data = await api.exportWorkouts();
+                const csv = convertToCSV(data.workouts);
+                downloadCSV(csv, 'bft_workouts.csv');
+                showToast('Export downloaded!', 'success');
+            } catch (error) {
+                console.error('Error exporting workouts:', error);
+                showToast('Error exporting workouts: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        function convertToCSV(data) {
+            if (data.length === 0) return '';
+            const headers = Object.keys(data[0]);
+            const rows = data.map(row => headers.map(h => JSON.stringify(row[h] ?? '')).join(','));
+            return [headers.join(','), ...rows].join('\n');
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

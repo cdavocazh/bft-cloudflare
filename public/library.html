@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#64B5F6">
+    <title>Workout Library - BFT Tracker</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">BFT Tracker</div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links" id="nav-links">
+            <a href="/" class="nav-link">Log Workout</a>
+            <a href="/plan.html" class="nav-link">Plan</a>
+            <a href="/library.html" class="nav-link active">Library</a>
+            <a href="/progress.html" class="nav-link">Progress</a>
+            <a href="/all-workouts.html" class="nav-link">Workout Records</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>Workout Library</h1>
+
+        <div class="card">
+            <div class="form-row-compact">
+                <div class="form-group">
+                    <label for="category-filter">Category</label>
+                    <select id="category-filter" onchange="loadExercises()">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="equipment-filter">Equipment</label>
+                    <select id="equipment-filter" onchange="loadExercises()">
+                        <option value="">All Equipment</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="muscle-filter">Muscle Group</label>
+                <select id="muscle-filter" onchange="loadExercises()">
+                    <option value="">All Muscles</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="text" id="search" placeholder="Search exercises..." oninput="filterExercises()">
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="exercises-header">
+                <h2>Exercises (<span id="exercise-count">0</span>)</h2>
+                <button class="btn btn-secondary btn-sm" onclick="showAddExerciseModal()">+ Add Exercise</button>
+            </div>
+            <div id="exercises-list" class="exercises-grid">
+                <p class="loading">Loading...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Image Edit Modal -->
+    <div id="image-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="image-modal-title">Edit Image</h3>
+                <button class="modal-close" onclick="closeImageModal()">&times;</button>
+            </div>
+            <div class="image-upload-tabs">
+                <button type="button" class="tab-btn active" onclick="switchImageTab('upload')">Upload File</button>
+                <button type="button" class="tab-btn" onclick="switchImageTab('url')">Enter URL</button>
+            </div>
+            <input type="hidden" id="image-exercise-id">
+            <input type="hidden" id="image-exercise-name">
+
+            <!-- Upload Tab -->
+            <div id="upload-tab" class="image-tab">
+                <div class="form-group">
+                    <label for="image-file-input">Select Image</label>
+                    <input type="file" id="image-file-input" accept="image/*" onchange="previewImage(event)">
+                    <small class="form-hint">JPG, PNG, GIF up to 5MB</small>
+                </div>
+                <div id="image-preview-container" class="hidden">
+                    <img id="image-preview" src="" alt="Preview">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeImageModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="uploadImage()">Upload</button>
+                </div>
+            </div>
+
+            <!-- URL Tab -->
+            <div id="url-tab" class="image-tab hidden">
+                <form id="image-form" onsubmit="saveImage(event)">
+                    <div class="form-group">
+                        <label for="image-url-input">Image URL</label>
+                        <input type="text" id="image-url-input" placeholder="/images/exercises/exercise-name.jpg">
+                        <small class="form-hint">Enter path like /images/exercises/bb-bench-press.jpg</small>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeImageModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save URL</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Exercise Modal -->
+    <div id="exercise-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Exercise</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="exercise-form">
+                <input type="hidden" id="edit-exercise-id">
+                <div class="form-group">
+                    <label for="exercise-name">Name *</label>
+                    <input type="text" id="exercise-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Categories *</label>
+                    <div id="exercise-categories" class="category-checkboxes"></div>
+                </div>
+                <div class="form-group">
+                    <label for="exercise-equipment">Equipment</label>
+                    <select id="exercise-equipment"></select>
+                </div>
+                <div class="form-row-compact">
+                    <div class="form-group">
+                        <label for="exercise-muscle-main">Primary Muscle</label>
+                        <select id="exercise-muscle-main">
+                            <option value="">Select...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="exercise-muscle-additional">Secondary Muscles</label>
+                        <input type="text" id="exercise-muscle-additional" placeholder="e.g., Biceps,Core">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="exercise-subcategory">Subcategory</label>
+                    <input type="text" id="exercise-subcategory" placeholder="e.g., Chest, Back, Power">
+                </div>
+                <div class="form-row-compact">
+                    <div class="form-group">
+                        <label for="exercise-weight-min">Min Weight (kg)</label>
+                        <input type="number" id="exercise-weight-min" step="0.5" min="0" placeholder="e.g., 10">
+                    </div>
+                    <div class="form-group">
+                        <label for="exercise-weight-max">Max Weight (kg)</label>
+                        <input type="number" id="exercise-weight-max" step="0.5" min="0" placeholder="e.g., 50">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>BFT Workout Tracker v2.0 | Cloudflare Workers + D1</p>
+    </footer>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/utils.js"></script>
+    <script>
+        let CONSTANTS = {};
+        let allExercises = [];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadConstants();
+            await loadExercises();
+
+            // Check for exercise ID in URL params (from Log Workout "lib" link)
+            const urlParams = new URLSearchParams(window.location.search);
+            const exerciseId = urlParams.get('exercise');
+            if (exerciseId) {
+                highlightAndScrollToExercise(exerciseId);
+            }
+
+            document.getElementById('exercise-form').addEventListener('submit', saveExercise);
+
+            // Mobile nav
+            const navToggle = document.getElementById('nav-toggle');
+            const navLinks = document.getElementById('nav-links');
+            if (navToggle) {
+                navToggle.addEventListener('click', () => {
+                    navToggle.classList.toggle('active');
+                    navLinks.classList.toggle('show');
+                });
+            }
+        });
+
+        function highlightAndScrollToExercise(exerciseId) {
+            const card = document.querySelector(`.exercise-card[data-id="${exerciseId}"]`);
+            if (card) {
+                card.classList.add('highlighted');
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Remove highlight after 3 seconds
+                setTimeout(() => card.classList.remove('highlighted'), 3000);
+            }
+        }
+
+        async function loadConstants() {
+            try {
+                const data = await api.getConstants();
+                CONSTANTS = data;
+
+                // Populate filters
+                document.getElementById('category-filter').innerHTML =
+                    '<option value="">All Categories</option>' +
+                    data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+                // Equipment filter will be updated after loading exercises to only show types with exercises
+                document.getElementById('equipment-filter').innerHTML =
+                    '<option value="">All Equipment</option>' +
+                    data.equipment_types.map(e => `<option value="${e}">${e}</option>`).join('');
+
+                document.getElementById('muscle-filter').innerHTML =
+                    '<option value="">All Muscles</option>' +
+                    data.muscle_groups.map(m => `<option value="${m}">${m}</option>`).join('');
+
+                // Modal category checkboxes (multi-select)
+                document.getElementById('exercise-categories').innerHTML =
+                    data.categories.map(c => `
+                        <label class="category-checkbox">
+                            <input type="checkbox" name="exercise-category" value="${c}">
+                            <span>${c}</span>
+                        </label>
+                    `).join('');
+
+                document.getElementById('exercise-equipment').innerHTML =
+                    '<option value="">Select...</option>' +
+                    data.equipment_types.map(e => `<option value="${e}">${e}</option>`).join('');
+
+                document.getElementById('exercise-muscle-main').innerHTML =
+                    '<option value="">Select...</option>' +
+                    data.muscle_groups.map(m => `<option value="${m}">${m}</option>`).join('');
+
+            } catch (error) {
+                console.error('Error loading constants:', error);
+                showToast('Error loading constants: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        // Update equipment filter to only show types that have exercises
+        function updateEquipmentFilter(exercises) {
+            const usedEquipmentTypes = new Set();
+            exercises.forEach(ex => {
+                if (ex.equipment_type) {
+                    usedEquipmentTypes.add(ex.equipment_type);
+                }
+            });
+
+            const currentValue = document.getElementById('equipment-filter').value;
+            const equipmentFilter = document.getElementById('equipment-filter');
+
+            // Only show equipment types that have at least one exercise
+            const availableTypes = CONSTANTS.equipment_types.filter(e => usedEquipmentTypes.has(e));
+
+            equipmentFilter.innerHTML =
+                '<option value="">All Equipment</option>' +
+                availableTypes.map(e => `<option value="${e}">${e}</option>`).join('');
+
+            // Restore selection if still valid
+            if (availableTypes.includes(currentValue)) {
+                equipmentFilter.value = currentValue;
+            }
+        }
+
+        let allExercisesGlobal = []; // Cache all exercises for equipment filter
+
+        async function loadExercises() {
+            const category = document.getElementById('category-filter').value;
+            const equipment = document.getElementById('equipment-filter').value;
+            const muscle = document.getElementById('muscle-filter').value;
+
+            try {
+                const params = {};
+                if (category) params.category = category;
+                if (equipment) params.equipment_type = equipment;
+                if (muscle) params.muscle_main = muscle;
+
+                const data = await api.getExercises(params);
+                allExercises = data.exercises;
+                renderExercises(allExercises);
+
+                // Load all exercises once to update equipment filter
+                if (allExercisesGlobal.length === 0) {
+                    const allData = await api.getExercises({});
+                    allExercisesGlobal = allData.exercises;
+                    updateEquipmentFilter(allExercisesGlobal);
+                }
+            } catch (error) {
+                console.error('Error loading exercises:', error);
+                showToast('Error loading exercises: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        // Refresh equipment filter (call after adding/deleting exercises)
+        async function refreshEquipmentFilter() {
+            try {
+                const allData = await api.getExercises({});
+                allExercisesGlobal = allData.exercises;
+                updateEquipmentFilter(allExercisesGlobal);
+            } catch (error) {
+                console.error('Error refreshing equipment filter:', error);
+            }
+        }
+
+        function filterExercises() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const filtered = allExercises.filter(ex =>
+                ex.name.toLowerCase().includes(search)
+            );
+            renderExercises(filtered);
+        }
+
+        function renderExercises(exercises) {
+            const container = document.getElementById('exercises-list');
+            document.getElementById('exercise-count').textContent = exercises.length;
+
+            if (exercises.length === 0) {
+                container.innerHTML = '<p class="text-muted">No exercises found</p>';
+                return;
+            }
+
+            container.innerHTML = exercises.map(ex => `
+                <div class="exercise-card" data-id="${ex.id}">
+                    <div class="exercise-card-image-container">
+                        ${ex.image_url ? `
+                            <img src="${ex.image_url}" alt="${ex.name}" class="exercise-card-image">
+                            <div class="image-actions">
+                                <button class="btn-image-action" onclick="editImage(${ex.id}, '${ex.name.replace(/'/g, "\\'")}')" title="Change image">✏️</button>
+                                <button class="btn-image-action" onclick="deleteImage(${ex.id}, '${ex.name.replace(/'/g, "\\'")}')" title="Remove image">🗑️</button>
+                            </div>
+                        ` : `
+                            <div class="exercise-no-image" onclick="editImage(${ex.id}, '${ex.name.replace(/'/g, "\\'")}')">
+                                <span>+ Add Image</span>
+                            </div>
+                        `}
+                    </div>
+                    <div class="exercise-card-content">
+                        <div class="exercise-card-header">
+                            <h4>${ex.name}</h4>
+                            <button class="btn-card-delete" onclick="deleteExercise(${ex.id}, '${ex.name.replace(/'/g, "\\'")}')" title="Delete exercise">×</button>
+                        </div>
+                        <p class="exercise-meta">
+                            ${ex.category} ${ex.subcategory ? `• ${ex.subcategory}` : ''}
+                            ${ex.equipment_type ? `• ${ex.equipment_type}` : ''}
+                        </p>
+                        ${ex.muscle_main ? `<p class="exercise-muscles">${ex.muscle_main}${ex.muscle_additional ? `, ${ex.muscle_additional}` : ''}</p>` : ''}
+                        <div class="exercise-card-actions">
+                            <button class="btn btn-sm btn-success" onclick="logExercise(${ex.id}, '${ex.category}')" title="Quick log">+1</button>
+                            <button class="btn btn-sm btn-outline" onclick="viewLogs(${ex.id}, '${ex.name.replace(/'/g, "\\'")}')" title="View all logs">Logs</button>
+                            <button class="btn btn-sm btn-secondary" onclick="editExercise(${ex.id})">Edit</button>
+                            ${ex.workout_count ? `<span class="exercise-log-count-inline">${ex.workout_count}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function logExercise(id, category) {
+            sessionStorage.setItem('logExerciseId', id);
+            sessionStorage.setItem('logExerciseCategory', category);
+            window.location.href = '/';
+        }
+
+        function showAddExerciseModal() {
+            document.getElementById('modal-title').textContent = 'Add Exercise';
+            document.getElementById('edit-exercise-id').value = '';
+            document.getElementById('exercise-form').reset();
+            document.getElementById('exercise-weight-min').value = '';
+            document.getElementById('exercise-weight-max').value = '';
+            // Reset all category checkboxes
+            document.querySelectorAll('input[name="exercise-category"]').forEach(cb => {
+                cb.checked = false;
+            });
+            document.getElementById('exercise-modal').classList.remove('hidden');
+        }
+
+        async function editExercise(id) {
+            try {
+                const ex = await api.getExercise(id);
+                document.getElementById('modal-title').textContent = 'Edit Exercise';
+                document.getElementById('edit-exercise-id').value = id;
+                document.getElementById('exercise-name').value = ex.name;
+
+                // Handle categories (can be stored in 'category' or 'categories' field)
+                const categories = [];
+                if (ex.category) categories.push(ex.category);
+                if (ex.categories) {
+                    ex.categories.split(',').forEach(c => {
+                        const trimmed = c.trim();
+                        if (trimmed && !categories.includes(trimmed)) {
+                            categories.push(trimmed);
+                        }
+                    });
+                }
+
+                // Set category checkboxes
+                document.querySelectorAll('input[name="exercise-category"]').forEach(cb => {
+                    cb.checked = categories.includes(cb.value);
+                });
+
+                document.getElementById('exercise-equipment').value = ex.equipment_type || '';
+                document.getElementById('exercise-muscle-main').value = ex.muscle_main || '';
+                document.getElementById('exercise-muscle-additional').value = ex.muscle_additional || '';
+                document.getElementById('exercise-subcategory').value = ex.subcategory || '';
+                document.getElementById('exercise-weight-min').value = ex.weight_min || '';
+                document.getElementById('exercise-weight-max').value = ex.weight_max || '';
+                document.getElementById('exercise-modal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading exercise:', error);
+                showToast('Error loading exercise: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('exercise-modal').classList.add('hidden');
+        }
+
+        async function saveExercise(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-exercise-id').value;
+            const weightMin = document.getElementById('exercise-weight-min').value;
+            const weightMax = document.getElementById('exercise-weight-max').value;
+
+            // Get selected categories from checkboxes
+            const selectedCategories = [];
+            document.querySelectorAll('input[name="exercise-category"]:checked').forEach(cb => {
+                selectedCategories.push(cb.value);
+            });
+
+            if (selectedCategories.length === 0) {
+                showToast('Please select at least one category', 'error');
+                return;
+            }
+
+            const data = {
+                exercise_name: document.getElementById('exercise-name').value,
+                name: document.getElementById('exercise-name').value,
+                category: selectedCategories[0], // Primary category (first selected)
+                categories: selectedCategories,  // All selected categories
+                equipment_type: document.getElementById('exercise-equipment').value || null,
+                muscle_main: document.getElementById('exercise-muscle-main').value || null,
+                muscle_additional: document.getElementById('exercise-muscle-additional').value || null,
+                subcategory: document.getElementById('exercise-subcategory').value || null,
+                weight_min: weightMin ? parseFloat(weightMin) : null,
+                weight_max: weightMax ? parseFloat(weightMax) : null,
+            };
+
+            try {
+                if (id) {
+                    await api.updateExercise(id, data);
+                    showToast('Exercise updated!', 'success');
+                } else {
+                    await api.createExercise(data);
+                    showToast('Exercise created!', 'success');
+                }
+                closeModal();
+                loadExercises();
+                refreshEquipmentFilter(); // Update equipment filter after save
+            } catch (error) {
+                console.error('Error saving exercise:', error);
+                showToast('Error saving exercise: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function deleteExercise(id, name) {
+            if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+
+            try {
+                await api.deleteExercise(id);
+                showToast('Exercise deleted', 'success');
+                loadExercises();
+                refreshEquipmentFilter(); // Update equipment filter after delete
+            } catch (error) {
+                showToast(error.message || 'Error deleting exercise', 'error');
+            }
+        }
+
+        // View all logs for this exercise (go to All Workouts with filter)
+        function viewLogs(exerciseId, exerciseName) {
+            sessionStorage.setItem('filterExerciseId', exerciseId);
+            sessionStorage.setItem('filterExerciseName', exerciseName);
+            window.location.href = '/all-workouts.html';
+        }
+
+        // Image management functions
+        function editImage(exerciseId, exerciseName) {
+            document.getElementById('image-modal-title').textContent = 'Edit Image: ' + exerciseName;
+            document.getElementById('image-exercise-id').value = exerciseId;
+            document.getElementById('image-exercise-name').value = exerciseName;
+            document.getElementById('image-url-input').value = '';
+            document.getElementById('image-file-input').value = '';
+            document.getElementById('image-preview-container').classList.add('hidden');
+            switchImageTab('upload');
+            document.getElementById('image-modal').classList.remove('hidden');
+        }
+
+        function switchImageTab(tab) {
+            const uploadTab = document.getElementById('upload-tab');
+            const urlTab = document.getElementById('url-tab');
+            const tabBtns = document.querySelectorAll('.image-upload-tabs .tab-btn');
+
+            tabBtns.forEach(btn => btn.classList.remove('active'));
+
+            if (tab === 'upload') {
+                uploadTab.classList.remove('hidden');
+                urlTab.classList.add('hidden');
+                tabBtns[0].classList.add('active');
+            } else {
+                uploadTab.classList.add('hidden');
+                urlTab.classList.remove('hidden');
+                tabBtns[1].classList.add('active');
+            }
+        }
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('File too large. Max 5MB.', 'error');
+                    event.target.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('image-preview').src = e.target.result;
+                    document.getElementById('image-preview-container').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function uploadImage() {
+            const fileInput = document.getElementById('image-file-input');
+            const file = fileInput.files[0];
+            const exerciseId = document.getElementById('image-exercise-id').value;
+
+            if (!file) {
+                showToast('Please select an image file', 'error');
+                return;
+            }
+
+            // Check file size (max 1.5MB to stay under 2MB base64 limit)
+            if (file.size > 1.5 * 1024 * 1024) {
+                showToast('Image too large. Max 1.5MB.', 'error');
+                return;
+            }
+
+            // Convert to base64 and upload
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    // Upload the image as base64 data URL
+                    const response = await fetch('/api/upload-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            data: e.target.result,
+                            exercise_id: exerciseId
+                        })
+                    });
+
+                    if (response.ok) {
+                        showToast('Image uploaded!', 'success');
+                        closeImageModal();
+                        loadExercises();
+                    } else {
+                        const err = await response.json();
+                        showToast(err.error || 'Error uploading image', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    showToast('Error uploading image: ' + (error.message || 'Unknown error'), 'error');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function deleteImage(exerciseId, exerciseName) {
+            if (!confirm(`Remove image for "${exerciseName}"?`)) return;
+
+            try {
+                await api.updateExercise(exerciseId, { image_url: null });
+                showToast('Image removed', 'success');
+                loadExercises();
+            } catch (error) {
+                console.error('Error removing image:', error);
+                showToast('Error removing image: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+            document.getElementById('image-file-input').value = '';
+            document.getElementById('image-preview-container').classList.add('hidden');
+        }
+
+        async function saveImage(e) {
+            e.preventDefault();
+            const exerciseId = document.getElementById('image-exercise-id').value;
+            const imageUrl = document.getElementById('image-url-input').value.trim();
+
+            if (!imageUrl) {
+                showToast('Please enter an image URL', 'error');
+                return;
+            }
+
+            try {
+                await api.updateExercise(exerciseId, { image_url: imageUrl });
+                showToast('Image updated!', 'success');
+                closeImageModal();
+                loadExercises();
+            } catch (error) {
+                console.error('Error updating image:', error);
+                showToast('Error updating image: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,2789 @@
+/**
+ * BFT Workout Tracker - Styles (Mobile-First)
+ */
+
+/* ==================== Variables ==================== */
+:root {
+    --primary-color: #64B5F6;
+    --primary-dark: #42A5F5;
+    --primary-light: #90CAF9;
+    --secondary-color: #78909C;
+    --danger-color: #f44336;
+    --warning-color: #FF9800;
+    --text-color: #333;
+    --text-light: #666;
+    --bg-color: #f5f5f5;
+    --card-bg: #fff;
+    --border-color: #ddd;
+    --border-radius: 8px;
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
+
+    /* Mobile-specific */
+    --touch-target-min: 44px;
+    --mobile-padding: 0.75rem;
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ==================== Reset & Base ==================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    font-size: 16px;
+    padding-bottom: var(--safe-area-bottom);
+}
+
+/* ==================== Navbar ==================== */
+.navbar {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.35rem 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+    min-height: 38px;
+}
+
+.nav-brand {
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+/* Hamburger Menu Button */
+.nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.nav-toggle span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background-color: white;
+    margin: 4px 0;
+    transition: 0.3s;
+    border-radius: 2px;
+}
+
+.nav-toggle.active span:nth-child(1) {
+    transform: rotate(-45deg) translate(-5px, 6px);
+}
+
+.nav-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.nav-toggle.active span:nth-child(3) {
+    transform: rotate(45deg) translate(-5px, -6px);
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    padding: 0.3rem 0.5rem;
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s;
+    font-size: 0.8rem;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+}
+
+.nav-link:hover,
+.nav-link:active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-link.active {
+    background-color: rgba(255, 255, 255, 0.3);
+    font-weight: 600;
+}
+
+/* ==================== Container & Layout ==================== */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--mobile-padding);
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.card h2 {
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Page header with action button */
+.page-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.page-header-row h1 {
+    margin-bottom: 0;
+}
+
+.page-header-row .btn-sm {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+/* Section header with filter */
+.section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.section-header-row h2 {
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.section-header-row select {
+    width: 33%;
+    flex-shrink: 0;
+}
+
+/* ==================== Forms (Mobile-Optimized) ==================== */
+.form-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Two columns on mobile for compact fields */
+.form-row-compact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Inline row for weight/reps/sets - always same row */
+.form-row-inline {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: nowrap;
+}
+
+.form-row-inline .form-group {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Preset and Weight Method row - 2:1 ratio */
+.form-row-preset {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: nowrap;
+}
+
+.form-row-preset .preset-group {
+    flex: 2;
+    min-width: 0;
+}
+
+.form-row-preset .method-group {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Date and Theme row - 1:1 ratio (half and half) */
+.form-row-date-theme {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: nowrap;
+}
+
+.form-row-date-theme .date-group {
+    flex: 1;
+    min-width: 0;
+}
+
+.form-row-date-theme .theme-group {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Workout Type and Branch row - 2:1 ratio */
+.form-row-type-branch {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: nowrap;
+}
+
+.form-row-type-branch .type-group {
+    flex: 2;
+    min-width: 0;
+}
+
+.form-row-type-branch .branch-group {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Save/Delete buttons row (2:1 ratio) */
+.form-row-save-delete {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.form-row-save-delete .save-btn {
+    flex: 2;
+}
+
+.form-row-save-delete .delete-btn {
+    flex: 1;
+}
+
+/* Theme input with dropdown */
+.theme-input-container,
+.branch-input-container {
+    position: relative;
+}
+
+.theme-input-container input,
+.branch-input-container input {
+    padding-right: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+}
+
+.theme-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+}
+
+.theme-option {
+    padding: 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    min-height: var(--touch-target-min);
+    display: flex;
+    align-items: center;
+}
+
+.theme-option:last-child {
+    border-bottom: none;
+}
+
+.theme-option:hover,
+.theme-option:active {
+    background-color: var(--primary-light);
+}
+
+.theme-option.disabled {
+    color: var(--text-light);
+    cursor: default;
+}
+
+.theme-option.disabled:hover {
+    background-color: transparent;
+}
+
+.theme-option.create-new {
+    color: var(--primary-dark);
+    font-weight: 500;
+}
+
+.theme-option.create-new .create-icon {
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 0;
+}
+
+.form-group.flex-1 {
+    flex: 1;
+}
+
+.form-group.flex-2 {
+    flex: 2;
+}
+
+.form-group.full-width {
+    flex-basis: 100%;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px; /* Prevents iOS zoom */
+    transition: border-color 0.2s;
+    min-height: var(--touch-target-min);
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: white;
+}
+
+.form-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
+}
+
+/* Ensure select options have readable font size */
+.form-group select option {
+    font-size: 16px;
+    padding: 0.5rem;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.25);
+}
+
+.form-group input:disabled,
+.form-group select:disabled {
+    background-color: var(--bg-color);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* ==================== Buttons (Touch-Friendly) ==================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s;
+    min-height: var(--touch-target-min);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover,
+.btn-primary:active {
+    background-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-secondary:hover,
+.btn-secondary:active {
+    background-color: #1976D2;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover,
+.btn-danger:active {
+    background-color: #d32f2f;
+}
+
+.btn-success {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.btn-success:hover,
+.btn-success:active {
+    background-color: #43A047;
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-outline:hover,
+.btn-outline:active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-block {
+    display: flex;
+    width: 100%;
+}
+
+.btn-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-height: 36px;
+}
+
+.btn-edit {
+    background-color: #78909C;
+    color: white;
+    padding: 0.3rem 0.6rem;
+    min-height: 28px;
+    font-size: 0.8rem;
+}
+
+.btn-edit:hover,
+.btn-edit:active {
+    background-color: #546E7A;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    min-height: 44px;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+}
+
+.btn-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-group .btn {
+    flex: 1;
+}
+
+/* ==================== Pagination ==================== */
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.pagination-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.pagination-controls input[type="number"] {
+    width: 50px;
+    padding: 0.25rem 0.35rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.pagination-bottom {
+    justify-content: center;
+    margin-top: 1rem;
+    margin-bottom: 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Header pagination (inline with section title) */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pagination-header {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+.pagination-header input[type="number"] {
+    width: 36px;
+    padding: 0.15rem 0.2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    font-size: 0.75rem;
+    text-align: center;
+    background: white;
+}
+
+.btn-page-nav {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 0.15rem 0.35rem;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: var(--text-light);
+    min-width: 22px;
+}
+
+.btn-page-nav:hover:not(:disabled) {
+    background-color: var(--bg-color);
+}
+
+.btn-page-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Inline date in workout cards */
+.workout-date-inline {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-right: 0.35rem;
+    white-space: nowrap;
+}
+
+/* ==================== Tables (Mobile Cards) ==================== */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+    background-color: var(--bg-color);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-table tr:active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.data-table tr.highlight {
+    background-color: rgba(100, 181, 246, 0.15);
+}
+
+/* Mobile Card View for Tables */
+.mobile-cards {
+    display: none;
+}
+
+.workout-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.workout-card.clickable {
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.workout-card.clickable:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-1px);
+}
+
+.workout-card.clickable:active {
+    transform: translateY(0);
+}
+
+/* Compact workout cards (All Workouts page) */
+.workout-card-compact {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+.workout-card-compact.highlighted {
+    box-shadow: 0 0 0 2px var(--primary-color), var(--shadow-hover);
+    animation: highlight-pulse 2s ease-out;
+}
+
+@keyframes highlight-pulse {
+    0% { box-shadow: 0 0 0 4px var(--primary-color), var(--shadow-hover); }
+    100% { box-shadow: 0 0 0 2px var(--primary-color), var(--shadow-hover); }
+}
+
+.workout-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    min-height: var(--touch-target-min);
+}
+
+.workout-card-row:active {
+    background-color: var(--bg-color);
+}
+
+.workout-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.workout-card-title strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.workout-category-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.workout-expand-icon {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
+
+.workout-card-details {
+    padding: 0 1rem 0.75rem;
+    border-top: 1px solid var(--border-color);
+    background-color: #fafafa;
+}
+
+.workout-detail-row {
+    padding-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.workout-card-actions-compact {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.btn-compact {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    min-height: 28px;
+}
+
+.btn-compact.btn-progress {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-compact.btn-edit {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-compact.btn-delete {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.workout-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.workout-card-title {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.workout-card-date {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.workout-card-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.workout-card-stat {
+    text-align: center;
+    padding: 0.5rem;
+    background-color: var(--bg-color);
+    border-radius: 4px;
+}
+
+.workout-card-stat-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.workout-card-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+/* ==================== Stats ==================== */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.stat {
+    padding: 0.5rem;
+}
+
+.stat-card {
+    background-color: var(--bg-color);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+/* Progress page header with +1 button */
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.progress-header h2 {
+    margin: 0;
+}
+
+/* Workout history items (Progress page) */
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-item-clickable {
+    cursor: pointer;
+    padding: 0.5rem;
+    margin: 0 -0.5rem;
+    border-radius: var(--border-radius);
+    transition: background-color 0.15s;
+}
+
+.history-item-clickable:hover,
+.history-item-clickable:active {
+    background-color: var(--bg-color);
+}
+
+.history-date {
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+.history-details {
+    font-weight: 500;
+}
+
+/* ==================== Tags (Touch-Friendly) ==================== */
+.tags-container {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.tag-checkbox {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.35rem;
+    background-color: var(--bg-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-height: 22px;
+    border: 1px solid var(--border-color);
+    font-size: 0.75rem;
+}
+
+.tag-checkbox:active {
+    background-color: #e0e0e0;
+}
+
+.tag-checkbox input {
+    width: 12px;
+    height: 12px;
+    margin-right: 0.2rem;
+}
+
+.tag-checkbox input:checked + span {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.tag-checkbox:has(input:checked) {
+    border-color: var(--primary-color);
+    background-color: rgba(100, 181, 246, 0.15);
+}
+
+/* ==================== Exercise Image ==================== */
+.exercise-image-container {
+    text-align: center;
+    margin: 0.75rem 0;
+}
+
+.exercise-image-container img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.suggested-weight {
+    background-color: #e3f2fd;
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    margin: 0.75rem 0;
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.suggested-weight::before {
+    content: "💡";
+}
+
+.weight-range {
+    background-color: #fff3e0;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius);
+    margin: 0.5rem 0;
+    color: #e65100;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.weight-range::before {
+    content: "📊";
+}
+
+.weight-range-notes {
+    font-size: 0.75rem;
+    color: #bf360c;
+    font-style: italic;
+}
+
+/* ==================== Variable Reps Input ==================== */
+.variable-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.btn-adj {
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    cursor: pointer;
+    min-height: 24px;
+    text-transform: lowercase;
+}
+
+.btn-adj:active {
+    background-color: #5f7380;
+}
+
+/* Recent Workouts Section */
+.recent-workouts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.recent-workouts-header h2 {
+    margin: 0;
+}
+
+.recent-workouts-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.workout-item-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.workout-item-compact:last-child {
+    border-bottom: none;
+}
+
+.workout-item-compact:hover {
+    background-color: rgba(100, 181, 246, 0.1);
+}
+
+.workout-item-compact:active {
+    background-color: rgba(100, 181, 246, 0.2);
+}
+
+.workout-item-compact strong {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.workout-item-compact .workout-date {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-left: 0.5rem;
+}
+
+.variable-row {
+    margin-bottom: 0.75rem;
+}
+
+.variable-inputs {
+    width: 100%;
+}
+
+.variable-inputs-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.variable-separator {
+    font-weight: bold;
+    color: var(--text-light);
+    font-size: 1.1rem;
+    padding: 0 0.15rem;
+}
+
+.variable-weight-select {
+    flex: 1;
+    min-width: 60px;
+    max-width: 80px;
+    padding: 0.5rem 0.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    min-height: 38px;
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.35rem center;
+    padding-right: 1.25rem;
+    text-align: center;
+}
+
+.variable-rep-input {
+    flex: 1;
+    min-width: 40px;
+    max-width: 50px;
+    padding: 0.5rem 0.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    min-height: 38px;
+    text-align: center;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.variable-weight-select:focus,
+.variable-rep-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.25);
+}
+
+/* ==================== Tag Button (With Cadence) ==================== */
+.tag-btn {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-light);
+}
+
+.tag-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.tag-btn.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    font-weight: 500;
+}
+
+.notes-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.notes-header label {
+    margin-bottom: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.toggle-group {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+}
+
+.btn-toggle {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-light);
+}
+
+.btn-toggle:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-toggle.active {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+    color: white;
+    font-weight: 500;
+}
+
+/* No-Show toggle - red when active */
+.btn-toggle.btn-noshow.active {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+/* ==================== Workout Plan Stations (Mobile) ==================== */
+.stations-header {
+    display: none;
+}
+
+.station-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background-color: var(--bg-color);
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
+}
+
+.station-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin: -0.75rem -0.75rem 0.5rem -0.75rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    transition: background-color 0.2s;
+}
+
+.station-row-header:hover {
+    background-color: rgba(100, 181, 246, 0.1);
+}
+
+.station-row.collapsed .station-row-header {
+    margin-bottom: -0.75rem;
+    border-radius: var(--border-radius);
+}
+
+.station-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.station-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.station-number {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.station-preview {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.station-row.expanded .station-preview {
+    display: none;
+}
+
+.station-expand-icon {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    flex-shrink: 0;
+}
+
+.station-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.station-field-full {
+    grid-column: 1 / -1;
+}
+
+.station-row input,
+.station-row select {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px;
+    min-height: 40px;
+}
+
+.station-row label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+/* Desktop station columns (hidden on mobile) */
+.station-col-num,
+.station-col-exercise,
+.station-col-custom,
+.station-col-sets,
+.station-col-time,
+.station-col-notes,
+.station-col-action {
+    display: none;
+}
+
+/* Station field row for inline filters */
+.station-field-row {
+    display: flex;
+    gap: 0.5rem;
+    grid-column: 1 / -1;
+}
+
+.station-filter-group {
+    flex: 1;
+    min-width: 0;
+}
+
+.station-field {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Exercise search container for stations */
+.station-exercise-search-container {
+    position: relative;
+    width: 100%;
+}
+
+.station-exercise-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: var(--shadow);
+}
+
+.exercise-option {
+    padding: 0.6rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.exercise-option-name {
+    flex: 1;
+    cursor: pointer;
+}
+
+.exercise-category-tags {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background-color: var(--bg-color);
+    padding: 0.15rem 0.35rem;
+    border-radius: 3px;
+    margin-left: 0.5rem;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.exercise-lib-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--primary-color);
+    border-radius: 3px;
+    margin-left: 0.5rem;
+    white-space: nowrap;
+}
+
+.exercise-lib-link:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Exercise label row with Browse Library link */
+.exercise-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.exercise-label-row label {
+    margin-bottom: 0;
+}
+
+.browse-library-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.browse-library-link:hover {
+    text-decoration: underline;
+}
+
+.exercise-option:last-child {
+    border-bottom: none;
+}
+
+.exercise-option:hover {
+    background-color: var(--bg-color);
+}
+
+.exercise-option.disabled {
+    color: var(--text-light);
+    cursor: default;
+    font-style: italic;
+}
+
+.exercise-option .exercise-equipment {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+/* More exercise field visibility */
+.station-more-field {
+    grid-column: 1 / -1;
+}
+
+/* Create new exercise option */
+.exercise-option.create-new {
+    color: var(--primary-color);
+    font-weight: 500;
+    cursor: pointer;
+    font-style: normal;
+    background-color: #f0f8ff;
+}
+
+.exercise-option.create-new:hover {
+    background-color: #e0f0ff;
+}
+
+.exercise-option.create-new .create-icon {
+    font-weight: bold;
+    margin-right: 0.25rem;
+}
+
+/* Exercise search container for Log Workout page */
+.exercise-search-container {
+    position: relative;
+    width: 100%;
+}
+
+.exercise-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: var(--shadow);
+}
+
+/* ==================== Plan Cards ==================== */
+.plan-card {
+    background-color: var(--bg-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.plan-header,
+.plan-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.plan-section-header h2 {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.plan-desc {
+    color: var(--text-light);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.station-list {
+    list-style: none;
+    font-size: 0.9rem;
+}
+
+.station-list li {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.station-list li:last-child {
+    border-bottom: none;
+}
+
+.badge {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+/* ==================== Library Grid ==================== */
+.filter-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 0.75rem;
+}
+
+.filter-row .form-group {
+    flex: 1;
+    min-width: 120px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    min-height: var(--touch-target-min);
+    padding: 0.5rem;
+}
+
+.checkbox-label input {
+    width: 20px;
+    height: 20px;
+}
+
+.exercises-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+.exercise-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    transition: box-shadow 0.2s, border-color 0.3s;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.exercise-card:active {
+    box-shadow: var(--shadow-hover);
+}
+
+.exercise-card.highlighted {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(100, 181, 246, 0.5);
+}
+
+.exercise-card h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.exercise-meta {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+}
+
+.category-tag {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.exercise-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+    margin: 0.5rem 0;
+}
+
+.exercise-no-image {
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-color);
+    border-radius: var(--border-radius);
+    color: var(--text-light);
+    font-size: 0.875rem;
+    margin: 0.5rem 0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.exercise-no-image:hover {
+    background-color: #e0e0e0;
+}
+
+/* Exercise card image container with overlay actions */
+.exercise-card-image-container {
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+
+.exercise-card-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+}
+
+.image-actions {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.exercise-card-image-container:hover .image-actions {
+    opacity: 1;
+}
+
+.btn-image-action {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.btn-image-action:hover {
+    background-color: white;
+}
+
+/* Form hint text */
+.form-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+}
+
+/* Image upload tabs */
+.image-upload-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.image-upload-tabs .tab-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.image-upload-tabs .tab-btn:hover {
+    color: var(--primary-color);
+}
+
+.image-upload-tabs .tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    font-weight: 500;
+}
+
+.image-tab {
+    padding-top: 0.5rem;
+}
+
+#image-preview-container {
+    margin: 1rem 0;
+    text-align: center;
+}
+
+#image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+/* Exercise card header with delete button */
+.exercise-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.exercise-card-header h4 {
+    margin: 0;
+    flex: 1;
+}
+
+.btn-card-delete {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    color: var(--text-light);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    border-radius: 4px;
+    transition: all 0.2s;
+    opacity: 0.5;
+}
+
+.btn-card-delete:hover {
+    color: var(--danger-color);
+    background-color: rgba(244, 67, 54, 0.1);
+    opacity: 1;
+}
+
+.exercise-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Exercise card action buttons */
+.exercise-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.exercise-card-actions .btn-sm {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    min-height: 26px;
+}
+
+/* Exercise log count badge (inline with buttons) */
+.exercise-log-count-inline {
+    background-color: #4CAF50;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    min-width: 22px;
+    height: 26px;
+    line-height: 26px;
+    text-align: center;
+    border-radius: 4px;
+    padding: 0 0.4rem;
+    margin-left: auto;
+}
+
+.muscle-groups-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+.muscle-tag {
+    background-color: var(--bg-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.checkbox-grid .checkbox-label {
+    padding: 0.4rem;
+    background-color: var(--bg-color);
+    border-radius: 4px;
+}
+
+/* ==================== Modal (Mobile Full-Screen) ==================== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    box-shadow: var(--shadow-hover);
+    padding: 1.25rem;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    margin: 0;
+    border: none;
+    padding: 0;
+    font-size: 1.25rem;
+}
+
+.modal-close {
+    font-size: 1.5rem;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+}
+
+/* Category checkboxes (multi-select in modal) */
+.category-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.category-checkbox {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.875rem;
+}
+
+.category-checkbox:hover {
+    border-color: var(--primary-color);
+}
+
+.category-checkbox input {
+    margin-right: 0.4rem;
+    width: 16px;
+    height: 16px;
+}
+
+.category-checkbox:has(input:checked) {
+    background-color: rgba(100, 181, 246, 0.15);
+    border-color: var(--primary-color);
+}
+
+.category-checkbox:has(input:checked) span {
+    color: var(--primary-dark);
+    font-weight: 500;
+}
+
+/* ==================== Toast ==================== */
+.toast {
+    position: fixed;
+    bottom: calc(1.5rem + var(--safe-area-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--border-radius);
+    color: white;
+    font-weight: 500;
+    z-index: 2000;
+    transition: transform 0.3s ease;
+    max-width: calc(100% - 2rem);
+    text-align: center;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.hidden {
+    display: none;
+}
+
+.toast.success {
+    background-color: var(--primary-color);
+}
+
+.toast.error {
+    background-color: var(--danger-color);
+}
+
+.toast.info {
+    background-color: var(--secondary-color);
+}
+
+/* ==================== Utilities ==================== */
+.hidden {
+    display: none !important;
+}
+
+.loading {
+    color: var(--text-light);
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+}
+
+.error {
+    color: var(--danger-color);
+}
+
+.meta {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.preset-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.preset-buttons .btn {
+    flex: 1;
+    min-width: 100px;
+}
+
+details {
+    cursor: pointer;
+}
+
+details summary {
+    font-weight: 600;
+    padding: 0.5rem 0;
+    min-height: var(--touch-target-min);
+    display: flex;
+    align-items: center;
+}
+
+/* Quick action buttons grid */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Pull to refresh indicator */
+.pull-indicator {
+    text-align: center;
+    padding: 1rem;
+    color: var(--text-light);
+    display: none;
+}
+
+/* ==================== Footer ==================== */
+.footer {
+    text-align: center;
+    padding: 1rem;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-top: 1rem;
+    padding-bottom: calc(1rem + var(--safe-area-bottom));
+}
+
+/* ==================== Desktop Styles ==================== */
+@media (min-width: 769px) {
+    :root {
+        --mobile-padding: 1.5rem;
+    }
+
+    .navbar {
+        padding: 1rem 1.5rem;
+    }
+
+    .nav-toggle {
+        display: none !important;
+    }
+
+    .nav-links {
+        display: flex !important;
+        position: static;
+        background: none;
+        flex-direction: row;
+        padding: 0;
+        gap: 0.5rem;
+    }
+
+    .nav-link {
+        padding: 0.5rem 1rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    .form-row {
+        flex-wrap: nowrap;
+    }
+
+    .form-row-compact {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .form-group {
+        min-width: 150px;
+    }
+
+    .stats-row {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .exercises-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+
+    .checkbox-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    /* Desktop station layout */
+    .stations-header {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background-color: var(--bg-color);
+        border-radius: var(--border-radius);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .station-row {
+        flex-direction: row;
+        align-items: center;
+        background: none;
+        border-left: none;
+        padding: 0.5rem;
+        margin-bottom: 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .station-row-header,
+    .station-fields,
+    .station-number {
+        display: none;
+    }
+
+    .station-row label {
+        display: none;
+    }
+
+    .station-col-num,
+    .station-col-filter,
+    .station-col-exercise,
+    .station-col-custom,
+    .station-col-sets,
+    .station-col-time,
+    .station-col-notes,
+    .station-col-action {
+        display: block;
+    }
+
+    .station-col-num { width: 40px; text-align: center; font-weight: bold; }
+    .station-col-filter { width: 120px; display: flex; flex-direction: column; gap: 0.25rem; }
+    .station-col-exercise { flex: 2; }
+    .station-col-custom { flex: 1.5; }
+    .station-col-sets { width: 100px; }
+    .station-col-time { width: 100px; }
+    .station-col-notes { flex: 1; }
+    .station-col-action { width: 50px; }
+
+    /* Desktop modal */
+    .modal {
+        align-items: center;
+    }
+
+    .modal-content {
+        border-radius: var(--border-radius);
+        max-width: 500px;
+        max-height: 85vh;
+        animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Desktop table view */
+    .mobile-cards {
+        display: none !important;
+    }
+
+    .data-table {
+        display: table !important;
+    }
+
+    .quick-actions {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ==================== Mobile Styles ==================== */
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: var(--primary-dark);
+        flex-direction: column;
+        padding: 0.5rem;
+        box-shadow: var(--shadow);
+    }
+
+    .nav-links.show {
+        display: flex;
+    }
+
+    .nav-link {
+        padding: 0.75rem 1rem;
+        border-radius: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-link:last-child {
+        border-bottom: none;
+    }
+
+    /* Hide desktop table, show mobile cards */
+    .data-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table {
+        font-size: 0.85rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 0.5rem 0.35rem;
+        white-space: nowrap;
+    }
+
+    /* Collapsible columns on mobile */
+    .data-table .hide-mobile {
+        display: none;
+    }
+
+    /* Filter row stacking */
+    .filter-row .form-group {
+        flex-basis: calc(50% - 0.25rem);
+        min-width: calc(50% - 0.25rem);
+    }
+
+    .filter-row .form-group:last-child {
+        flex-basis: 100%;
+    }
+
+    /* Reduce image size on mobile */
+    .exercise-image-container img {
+        max-height: 150px;
+    }
+
+    /* Stack action buttons */
+    .btn-group {
+        flex-direction: column;
+    }
+
+    .btn-group .btn {
+        width: 100%;
+    }
+}
+
+/* ==================== Extra Small Screens ==================== */
+@media (max-width: 360px) {
+    :root {
+        --mobile-padding: 0.5rem;
+    }
+
+    .card {
+        padding: 0.75rem;
+    }
+
+    .form-row-compact {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+
+    .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .workout-card-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-row .form-group {
+        flex-basis: 100%;
+    }
+
+    /* Variable inputs on very small screens */
+    .variable-weight-select {
+        min-width: 50px;
+        max-width: 65px;
+        font-size: 13px;
+        padding: 0.4rem 0.2rem;
+        padding-right: 1rem;
+    }
+
+    .variable-rep-input {
+        min-width: 35px;
+        max-width: 45px;
+        font-size: 13px;
+        padding: 0.4rem 0.2rem;
+    }
+
+    .variable-separator {
+        font-size: 0.9rem;
+        padding: 0 0.1rem;
+    }
+}
+
+/* ==================== Landscape Mobile ==================== */
+@media (max-width: 768px) and (orientation: landscape) {
+    .modal-content {
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .exercise-image-container img {
+        max-height: 120px;
+    }
+}
+
+/* ==================== Dark Mode Support ==================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: #e0e0e0;
+        --text-light: #aaa;
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --border-color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        background-color: #2a2a2a;
+        color: var(--text-color);
+    }
+
+    .form-group select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23e0e0e0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    }
+
+    .tag-checkbox,
+    .checkbox-grid .checkbox-label,
+    .station-row {
+        background-color: #2a2a2a;
+    }
+
+    .nav-links {
+        background-color: #1a1a1a;
+    }
+
+    .variable-weight-select,
+    .variable-rep-input {
+        background-color: #2a2a2a;
+        color: var(--text-color);
+    }
+
+    .variable-weight-select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 12 12'%3E%3Cpath fill='%23e0e0e0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    }
+
+    .tag-btn {
+        background-color: #2a2a2a;
+        border-color: #444;
+        color: var(--text-light);
+    }
+
+    .tag-btn.active {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+
+    .image-upload-tabs .tab-btn {
+        color: var(--text-light);
+    }
+
+    .image-upload-tabs .tab-btn.active {
+        color: var(--primary-color);
+    }
+
+    .btn-card-delete {
+        color: var(--text-light);
+    }
+}
+
+/* ==================== Mobile Font & Input Adjustments ==================== */
+@media (max-width: 768px) {
+    /* Smaller navbar height and brand */
+    .navbar {
+        padding: 0.25rem 0.5rem;
+        min-height: 36px;
+    }
+
+    .nav-brand {
+        font-size: 0.9rem;
+    }
+
+    .nav-link {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    /* Smaller page titles */
+    h1 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card h2 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.4rem;
+    }
+
+    /* Shorter/compact input fields */
+    .form-group input,
+    .form-group select {
+        padding: 0.5rem 0.6rem;
+        min-height: 38px;
+    }
+
+    .form-group label {
+        font-size: 0.8rem;
+        margin-bottom: 0.15rem;
+    }
+
+    /* Resizable notes textarea */
+    .form-group textarea {
+        resize: vertical;
+        min-height: 60px;
+        padding: 0.5rem 0.6rem;
+    }
+
+    /* Compact cards */
+    .card {
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Smaller button text */
+    .btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        min-height: 40px;
+    }
+
+    .btn-lg {
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+        min-height: 40px;
+    }
+
+    /* Compact workout cards */
+    .workout-card {
+        padding: 0.75rem;
+    }
+
+    .workout-card-title {
+        font-size: 0.95rem;
+    }
+
+    .workout-card-stat-value {
+        font-size: 1rem;
+    }
+
+    .workout-card-stat-label {
+        font-size: 0.7rem;
+    }
+
+    /* Smaller station inputs */
+    .station-row input,
+    .station-row select {
+        padding: 0.5rem;
+        min-height: 36px;
+        font-size: 14px;
+    }
+
+    .station-number {
+        font-size: 1rem;
+    }
+
+    /* Compact stats */
+    .stat-value {
+        font-size: 1.1rem;
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+    }
+
+    /* Smaller badges */
+    .badge {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    /* Filter row compact */
+    .filter-row .form-group label {
+        font-size: 0.75rem;
+    }
+}
+
+/* ==================== Print Styles ==================== */
+@media print {
+    .navbar,
+    .footer,
+    .btn,
+    .nav-toggle,
+    .exercise-actions {
+        display: none !important;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+    }
+}
+
+/* ==================== Collapsible Workout Plans Section ==================== */
+.collapsible-section {
+    margin-bottom: 1rem;
+}
+
+.collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    margin: -0.5rem 0;
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s;
+}
+
+.collapsible-header:hover {
+    background-color: rgba(100, 181, 246, 0.1);
+}
+
+.collapsible-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.expand-icon {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    flex-shrink: 0;
+    padding-right: 0.5rem;
+}
+
+.plan-count-badge {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: normal;
+}
+
+.collapsible-content {
+    margin-top: 1rem;
+}
+
+/* Plan Cards in Workout Records */
+.plan-card {
+    background-color: var(--bg-color);
+    border-radius: var(--border-radius);
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid var(--primary-color);
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.plan-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-1px);
+}
+
+.plan-card:last-child {
+    margin-bottom: 0;
+}
+
+.plan-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.plan-card-header strong {
+    font-size: 0.95rem;
+}
+
+.plan-badges {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.badge-theme {
+    background-color: var(--primary-light);
+    color: var(--text-color);
+}
+
+.badge-branch {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.plan-type {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+}
+
+.plan-type-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.25rem;
+    gap: 0.5rem;
+}
+
+.plan-type-text {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.btn-xs {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    min-height: auto;
+}
+
+.plan-stations-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.station-chip {
+    font-size: 0.7rem;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+
+.station-chip.more {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+/* Branch Breakdown Section */
+.branch-breakdown-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.branch-breakdown-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.branch-breakdown-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.branch-name {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.branch-stats {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.branch-breakdown-bar {
+    height: 8px;
+    background-color: var(--bg-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.branch-breakdown-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.branch-total {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    text-align: right;
+}
+
+.branch-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+    gap: 0.5rem;
+}
+
+.branch-total-text {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--card-bg);
+}
+
+.toggle-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.toggle-label .toggle-text {
+    white-space: nowrap;
+}
+
+/* Dark mode support for plan cards */
+@media (prefers-color-scheme: dark) {
+    .plan-card {
+        background-color: #333;
+    }
+
+    .station-chip {
+        background-color: #444;
+        border-color: #555;
+    }
+
+    .badge-theme {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .branch-breakdown-bar {
+        background-color: #444;
+    }
+}
