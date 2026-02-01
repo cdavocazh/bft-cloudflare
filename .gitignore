@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Wrangler
+.wrangler/
+.dev.vars
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local database
+*.sqlite
+*.sqlite3
