@@ -100,7 +100,9 @@
                         </div>
                         <div class="form-group">
                             <label for="reps">Reps</label>
-                            <input type="number" id="reps" name="reps" value="8" min="1" max="100" inputmode="numeric">
+                            <select id="reps" name="reps">
+                                <!-- Populated by JS with 1-20 options -->
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="sets">Sets</label>
@@ -312,6 +314,14 @@
                 const themeSelect = document.getElementById('workout-theme');
                 themeSelect.innerHTML = '<option value="">-</option>' +
                     data.workout_themes.map(theme => `<option value="${theme}">${theme}</option>`).join('');
+
+                // Populate reps dropdown (1-20)
+                const repsSelect = document.getElementById('reps');
+                let repsOptionsHtml = '';
+                for (let r = 1; r <= 20; r++) {
+                    repsOptionsHtml += `<option value="${r}"${r === 8 ? ' selected' : ''}>${r}</option>`;
+                }
+                repsSelect.innerHTML = repsOptionsHtml;
 
             } catch (error) {
                 console.error('Error loading constants:', error);
@@ -644,7 +654,7 @@
             const currentWeights = [];
             const currentReps = [];
             weightsContainer.querySelectorAll('select').forEach(sel => currentWeights.push(sel.value));
-            repsContainer.querySelectorAll('input').forEach(inp => currentReps.push(inp.value));
+            repsContainer.querySelectorAll('select').forEach(sel => currentReps.push(sel.value));
 
             // If a preserved weight is provided (from mode switch), use it for all sets
             if (preservedWeight && currentWeights.length === 0) {
@@ -677,31 +687,43 @@
                 }
             });
 
-            // Generate reps inputs
+            // Build reps options HTML (1-20)
+            let repsOptionsHtml = '';
+            for (let r = 1; r <= 20; r++) {
+                repsOptionsHtml += `<option value="${r}">${r}</option>`;
+            }
+
+            // Generate reps selects
             let repsHtml = '<div class="variable-inputs-row">';
             for (let i = 0; i < numSets; i++) {
                 const defaultRep = currentReps[i] || '6';
-                repsHtml += `<input type="number" class="variable-rep-input" data-set="${i}" value="${defaultRep}" min="1" max="100" inputmode="numeric">`;
+                repsHtml += `<select class="variable-rep-select" data-set="${i}">${repsOptionsHtml}</select>`;
                 if (i < numSets - 1) repsHtml += '<span class="variable-separator">/</span>';
             }
             repsHtml += '</div>';
             repsContainer.innerHTML = repsHtml;
+
+            // Set rep values
+            repsContainer.querySelectorAll('select').forEach((sel, i) => {
+                const val = currentReps[i] || '6';
+                sel.value = val;
+            });
         }
 
         function getVariableData() {
             const weights = [];
             const reps = [];
             document.querySelectorAll('.variable-weight-select').forEach(sel => weights.push(parseFloat(sel.value)));
-            document.querySelectorAll('.variable-rep-input').forEach(inp => reps.push(parseInt(inp.value)));
+            document.querySelectorAll('.variable-rep-select').forEach(sel => reps.push(parseInt(sel.value)));
             return { weights, reps };
         }
 
         function adjustAllReps() {
-            const repInputs = document.querySelectorAll('.variable-rep-input');
-            if (repInputs.length > 0) {
-                const firstValue = repInputs[0].value;
-                repInputs.forEach(input => {
-                    input.value = firstValue;
+            const repSelects = document.querySelectorAll('.variable-rep-select');
+            if (repSelects.length > 0) {
+                const firstValue = repSelects[0].value;
+                repSelects.forEach(select => {
+                    select.value = firstValue;
                 });
             }
         }

@@ -265,7 +265,17 @@ wrangler deploy
 20. **Plan (plan.html)**: Changed theme input placeholder from "Select or type theme..." to "Select"
 21. **CSS (style.css)**: Changed form input border-radius to 4px (more rectangular appearance)
 22. **Workout Records (all-workouts.html)**: Fixed collapse/expand triangle not being responsive (moved event.stopPropagation to pagination controls only)
+23. **Database**: Added `weight_increment`, `reps_min`, `reps_max` columns to exercises table (migration 0006)
+24. **Library (library.html)**: Added Weight Increment field to exercise edit modal - allows custom increment per exercise instead of using equipment default
+25. **Library (library.html)**: Added Min/Max Reps fields to exercise edit modal - allows setting rep range per exercise
+26. **Workout Records (all-workouts.html)**: Branch Breakdown section is now collapsible and collapsed by default for better screen space efficiency
+27. **Log Workout (index.html)**: Changed reps input from number input to dropdown menu (1-20 options) for both standard and variable modes
+28. **Workout Records (all-workouts.html)**: Workout card titles now show weight (e.g., "15kg") inline without needing to expand
+29. **Workout Records (all-workouts.html)**: Removed bold from exercise names in workout cards for cleaner appearance
+30. **Progress (progress.html)**: Added "Lib" button in Statistics section header - links to exercise's Library page for quick access to edit exercise details
+31. **Library (library.html)**: Fixed weight increment input to accept 0.25 increments (allows 1.25kg etc.)
+32. **Workout Records (all-workouts.html)**: Aligned category tag and weight to the right side of workout card title row
 
 ---
 
-*Last updated: February 1, 2026*
+*Last updated: February 5, 2026*

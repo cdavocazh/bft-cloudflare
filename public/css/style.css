@@ -623,10 +623,51 @@ h1 {
 }
 
 /* Inline date in workout cards */
+.workout-card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.workout-left {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.workout-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+}
+
 .workout-date-inline {
     font-size: 0.75rem;
     color: var(--text-light);
     margin-right: 0.35rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.workout-exercise-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workout-category-tag {
+    margin-right: 0.35rem;
+}
+
+.workout-weight-inline {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    font-weight: 500;
     white-space: nowrap;
 }
 
@@ -874,6 +915,17 @@ h1 {
 }
 
 .progress-header h2 {
+    margin: 0;
+}
+
+.stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.stats-header h3 {
     margin: 0;
 }
 
