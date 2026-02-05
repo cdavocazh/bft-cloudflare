@@ -93,19 +93,24 @@
             </div>
         </div>
 
-        <!-- Branch Breakdown Section -->
-        <div class="card">
-            <div class="section-header-row">
+        <!-- Branch Breakdown Section (collapsible, collapsed by default) -->
+        <div class="card collapsible-section collapsed" id="branch-section">
+            <div class="collapsible-header" onclick="toggleBranchSection()">
                 <h2>Branch Breakdown</h2>
-                <select id="branch-days-filter" onchange="loadBranchBreakdown()">
-                    <option value="90">Last 90 days</option>
-                    <option value="30">Last 30 days</option>
-                    <option value="180">Last 180 days</option>
-                    <option value="365">Last year</option>
-                </select>
+                <div class="header-controls">
+                    <select id="branch-days-filter" onchange="loadBranchBreakdown()" onclick="event.stopPropagation()">
+                        <option value="90">Last 90 days</option>
+                        <option value="30">Last 30 days</option>
+                        <option value="180">Last 180 days</option>
+                        <option value="365">Last year</option>
+                    </select>
+                    <span class="expand-icon" id="branch-expand-icon">▶</span>
+                </div>
             </div>
-            <div id="branch-breakdown">
-                <p class="loading">Loading...</p>
+            <div class="collapsible-content" id="branch-content" style="display: none;">
+                <div id="branch-breakdown">
+                    <p class="loading">Loading...</p>
+                </div>
             </div>
         </div>
     </main>
@@ -341,6 +346,24 @@
             }
         }
 
+        function toggleBranchSection() {
+            const section = document.getElementById('branch-section');
+            const content = document.getElementById('branch-content');
+            const icon = document.getElementById('branch-expand-icon');
+
+            if (section.classList.contains('collapsed')) {
+                section.classList.remove('collapsed');
+                section.classList.add('expanded');
+                content.style.display = '';
+                icon.textContent = '▼';
+            } else {
+                section.classList.remove('expanded');
+                section.classList.add('collapsed');
+                content.style.display = 'none';
+                icon.textContent = '▶';
+            }
+        }
+
         async function toggleNoShow(planDate, currentValue) {
             try {
                 // First get the current plan data
@@ -513,7 +536,7 @@
             document.getElementById('prev-page-btn-top').disabled = currentPage <= 1;
             document.getElementById('next-page-btn-top').disabled = currentPage >= totalPages;
 
-            // Build HTML - each workout on its own line with inline date
+            // Build HTML - each workout on its own line with inline date and weight
             const htmlParts = [];
             for (const w of paginatedWorkouts) {
                 const escapedName = w.exercise_name.replace(/'/g, "\\'");
@@ -523,9 +546,14 @@
                     <div class="workout-card-compact" data-id="${w.id}">
                         <div class="workout-card-row" onclick="toggleWorkoutDetails(this)">
                             <div class="workout-card-title">
-                                <span class="workout-date-inline">${shortDate}</span>
-                                <strong>${w.exercise_name}</strong>
-                                <span class="workout-category-tag">${categoryShort}</span>
+                                <span class="workout-left">
+                                    <span class="workout-date-inline">${shortDate}</span>
+                                    <span class="workout-exercise-name">${w.exercise_name}</span>
+                                </span>
+                                <span class="workout-right">
+                                    <span class="workout-category-tag">${categoryShort}</span>
+                                    <span class="workout-weight-inline">${w.weight_kg}kg</span>
+                                </span>
                             </div>
                             <span class="workout-expand-icon">▶</span>
                         </div>

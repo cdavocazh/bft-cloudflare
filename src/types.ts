@@ -18,6 +18,9 @@ export interface Exercise {
   image_url: string | null;
   weight_min: number | null;
   weight_max: number | null;
+  weight_increment: number | null;
+  reps_min: number | null;
+  reps_max: number | null;
   created_at: string;
   workout_count?: number;
 }
@@ -95,6 +98,9 @@ export interface CreateExerciseRequest {
   muscle_additional?: string;
   weight_min?: number;
   weight_max?: number;
+  weight_increment?: number;
+  reps_min?: number;
+  reps_max?: number;
 }
 
 export interface UpdateExerciseRequest {
@@ -108,6 +114,9 @@ export interface UpdateExerciseRequest {
   image_url?: string | null;
   weight_min?: number;
   weight_max?: number;
+  weight_increment?: number;
+  reps_min?: number;
+  reps_max?: number;
 }
 
 export interface CreateWorkoutPlanRequest {

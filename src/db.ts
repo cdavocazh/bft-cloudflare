@@ -92,8 +92,8 @@ export async function createExercise(db: D1Database, data: CreateExerciseRequest
 
   const result = await db
     .prepare(
-      `INSERT INTO exercises (name, category, subcategory, equipment_type, muscle_main, muscle_additional, weight_min, weight_max)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO exercises (name, category, subcategory, equipment_type, muscle_main, muscle_additional, weight_min, weight_max, weight_increment, reps_min, reps_max)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       data.exercise_name,
@@ -103,7 +103,10 @@ export async function createExercise(db: D1Database, data: CreateExerciseRequest
       data.muscle_main || null,
       data.muscle_additional || null,
       data.weight_min || null,
-      data.weight_max || null
+      data.weight_max || null,
+      data.weight_increment || null,
+      data.reps_min || null,
+      data.reps_max || null
     )
     .run();
 
@@ -153,6 +156,18 @@ export async function updateExercise(db: D1Database, id: number, data: UpdateExe
   if (data.weight_max !== undefined) {
     updates.push('weight_max = ?');
     params.push(data.weight_max && data.weight_max > 0 ? data.weight_max : null);
+  }
+  if (data.weight_increment !== undefined) {
+    updates.push('weight_increment = ?');
+    params.push(data.weight_increment && data.weight_increment > 0 ? data.weight_increment : null);
+  }
+  if (data.reps_min !== undefined) {
+    updates.push('reps_min = ?');
+    params.push(data.reps_min && data.reps_min > 0 ? data.reps_min : null);
+  }
+  if (data.reps_max !== undefined) {
+    updates.push('reps_max = ?');
+    params.push(data.reps_max && data.reps_max > 0 ? data.reps_max : null);
   }
 
   if (updates.length === 0) return false;
