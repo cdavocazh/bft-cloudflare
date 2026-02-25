@@ -203,10 +203,20 @@
                 sessionStorage.removeItem('viewWorkoutId');
             }
 
+            // Check for direct edit request (from Progress page)
+            const editWorkoutId = sessionStorage.getItem('editWorkoutId');
+            if (editWorkoutId) {
+                sessionStorage.removeItem('editWorkoutId');
+            }
+
             await loadWorkouts();
 
+            // Open edit modal directly if requested from Progress page
+            if (editWorkoutId) {
+                editWorkout(parseInt(editWorkoutId));
+            }
             // Scroll to and highlight specific workout if requested
-            if (viewWorkoutId) {
+            else if (viewWorkoutId) {
                 setTimeout(() => {
                     const workoutCard = document.querySelector(`.workout-card-compact[data-id="${viewWorkoutId}"]`);
                     if (workoutCard) {
@@ -542,6 +552,7 @@
                 const escapedName = w.exercise_name.replace(/'/g, "\\'");
                 const shortDate = formatShortDate(w.workout_date);
                 const categoryShort = getCategoryShort(w.category);
+                const lastSetWeight = getLastSetWeight(w);
                 htmlParts.push(`
                     <div class="workout-card-compact" data-id="${w.id}">
                         <div class="workout-card-row" onclick="toggleWorkoutDetails(this)">
@@ -552,7 +563,7 @@
                                 </span>
                                 <span class="workout-right">
                                     <span class="workout-category-tag">${categoryShort}</span>
-                                    <span class="workout-weight-inline">${w.weight_kg}kg</span>
+                                    <span class="workout-weight-inline">${lastSetWeight}kg</span>
                                 </span>
                             </div>
                             <span class="workout-expand-icon">▶</span>
@@ -573,6 +584,20 @@
                 `);
             }
             container.innerHTML = htmlParts.join('');
+        }
+
+        // Extract the last set weight from a workout
+        // If variable mode, parse notes for "[Variable: 15/17.5/20kg × ...]" and return last weight
+        // Otherwise return the stored weight_kg
+        function getLastSetWeight(workout) {
+            if (workout.notes) {
+                const match = workout.notes.match(/\[Variable:\s*([\d.\/]+)kg/);
+                if (match) {
+                    const weights = match[1].split('/');
+                    return parseFloat(weights[weights.length - 1]);
+                }
+            }
+            return workout.weight_kg;
         }
 
         // Format date as dd/mm/yy

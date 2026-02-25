@@ -210,6 +210,14 @@ h1 {
     margin-bottom: 0.75rem;
 }
 
+/* Increment + Measure type row (3:1 ratio) */
+.form-row-increment-measure {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
 /* Inline row for weight/reps/sets - always same row */
 .form-row-inline {
     display: flex;
@@ -2454,6 +2462,111 @@ details summary {
 
     .btn-card-delete {
         color: var(--text-light);
+    }
+
+    /* Workout card details (expanded) - fix white bg in dark mode */
+    .workout-card-details {
+        background-color: #2a2a2a;
+        border-top-color: #444;
+    }
+
+    .workout-card-compact {
+        background-color: var(--card-bg);
+    }
+
+    .workout-card-row:active {
+        background-color: #333;
+    }
+
+    .workout-detail-row,
+    .workout-stats,
+    .workout-notes {
+        color: var(--text-color);
+    }
+
+    .workout-tag {
+        color: var(--text-light);
+    }
+
+    .workout-category-tag {
+        background-color: rgba(100, 181, 246, 0.2);
+        color: var(--primary-light);
+    }
+
+    /* Modal dark mode */
+    .modal-content {
+        background-color: var(--card-bg);
+    }
+
+    .modal-header {
+        border-bottom-color: #444;
+    }
+
+    /* Theme dropdown dark mode */
+    .theme-dropdown {
+        background-color: var(--card-bg);
+        border-color: #444;
+    }
+
+    .theme-option {
+        border-bottom-color: #333;
+    }
+
+    /* Pagination inputs */
+    .pagination-header input[type="number"] {
+        background-color: #2a2a2a;
+        color: var(--text-color);
+        border-color: #444;
+    }
+
+    /* Exercise dropdown dark mode */
+    .exercise-dropdown,
+    .station-exercise-dropdown {
+        background-color: var(--card-bg);
+        border-color: #444;
+    }
+
+    .exercise-option:hover {
+        background-color: #333;
+    }
+
+    .exercise-option.create-new {
+        background-color: #1a2a3a;
+    }
+
+    .exercise-option.create-new:hover {
+        background-color: #1e3045;
+    }
+
+    /* Suggested weight & weight range */
+    .suggested-weight {
+        background-color: #1a2a3a;
+        color: var(--primary-light);
+    }
+
+    .weight-range {
+        background-color: #2a1a00;
+        color: #FFB74D;
+    }
+
+    .weight-range-notes {
+        color: #FF8A65;
+    }
+
+    /* Toggle label */
+    .toggle-label {
+        background-color: #2a2a2a;
+        border-color: #444;
+    }
+
+    /* Category checkbox */
+    .category-checkbox {
+        background-color: #2a2a2a;
+        border-color: #444;
+    }
+
+    .category-checkbox:has(input:checked) {
+        background-color: rgba(100, 181, 246, 0.15);
     }
 }
 

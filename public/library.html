@@ -156,9 +156,18 @@
                         <input type="number" id="exercise-weight-max" step="0.5" min="0" placeholder="e.g., 50">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="exercise-weight-increment">Weight Increment (kg)</label>
-                    <input type="number" id="exercise-weight-increment" step="0.25" min="0" placeholder="e.g., 2.5 (defaults to equipment type)">
+                <div class="form-row-increment-measure">
+                    <div class="form-group">
+                        <label for="exercise-weight-increment">Weight Increment (kg)</label>
+                        <input type="number" id="exercise-weight-increment" step="0.25" min="0" placeholder="e.g., 2.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="exercise-measure-type">Rep / Time</label>
+                        <select id="exercise-measure-type">
+                            <option value="Rep">Rep</option>
+                            <option value="Time">Time</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="form-row-compact">
                     <div class="form-group">
@@ -399,6 +408,7 @@
             document.getElementById('exercise-weight-increment').value = '';
             document.getElementById('exercise-reps-min').value = '';
             document.getElementById('exercise-reps-max').value = '';
+            document.getElementById('exercise-measure-type').value = 'Rep';
             // Reset all category checkboxes
             document.querySelectorAll('input[name="exercise-category"]').forEach(cb => {
                 cb.checked = false;
@@ -439,6 +449,7 @@
                 document.getElementById('exercise-weight-increment').value = ex.weight_increment || '';
                 document.getElementById('exercise-reps-min').value = ex.reps_min || '';
                 document.getElementById('exercise-reps-max').value = ex.reps_max || '';
+                document.getElementById('exercise-measure-type').value = ex.measure_type || 'Rep';
                 document.getElementById('exercise-modal').classList.remove('hidden');
             } catch (error) {
                 console.error('Error loading exercise:', error);
@@ -458,6 +469,7 @@
             const weightIncrement = document.getElementById('exercise-weight-increment').value;
             const repsMin = document.getElementById('exercise-reps-min').value;
             const repsMax = document.getElementById('exercise-reps-max').value;
+            const measureType = document.getElementById('exercise-measure-type').value;
 
             // Get selected categories from checkboxes
             const selectedCategories = [];
@@ -484,6 +496,7 @@
                 weight_increment: weightIncrement ? parseFloat(weightIncrement) : null,
                 reps_min: repsMin ? parseInt(repsMin) : null,
                 reps_max: repsMax ? parseInt(repsMax) : null,
+                measure_type: measureType || 'Rep',
             };
 
             try {
