@@ -177,61 +177,22 @@
         const PAGE_SIZE = 20;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            // Load constants and exercises in parallel for faster initial load
-            await Promise.all([
-                loadConstants(),
-                loadExercises(),
-                loadRecentPlans(),
-                loadBranchBreakdown()
-            ]);
-
-            // Check for filter from Library page
+            // Read sessionStorage flags immediately
             const filterExerciseId = sessionStorage.getItem('filterExerciseId');
             const filterExerciseName = sessionStorage.getItem('filterExerciseName');
+            const viewWorkoutId = sessionStorage.getItem('viewWorkoutId');
+            const editWorkoutId = sessionStorage.getItem('editWorkoutId');
+
+            // Clear sessionStorage right away
             if (filterExerciseId) {
-                document.getElementById('exercise-filter').value = filterExerciseId;
-                currentExerciseId = filterExerciseId;
-                currentExerciseName = filterExerciseName;
                 sessionStorage.removeItem('filterExerciseId');
                 sessionStorage.removeItem('filterExerciseName');
-                showProgressButton(filterExerciseName);
             }
+            if (viewWorkoutId) sessionStorage.removeItem('viewWorkoutId');
+            if (editWorkoutId) sessionStorage.removeItem('editWorkoutId');
 
-            // Check for specific workout to highlight (from Log Workout page)
-            const viewWorkoutId = sessionStorage.getItem('viewWorkoutId');
-            if (viewWorkoutId) {
-                sessionStorage.removeItem('viewWorkoutId');
-            }
-
-            // Check for direct edit request (from Progress page)
-            const editWorkoutId = sessionStorage.getItem('editWorkoutId');
-            if (editWorkoutId) {
-                sessionStorage.removeItem('editWorkoutId');
-            }
-
-            await loadWorkouts();
-
-            // Open edit modal directly if requested from Progress page
-            if (editWorkoutId) {
-                editWorkout(parseInt(editWorkoutId));
-            }
-            // Scroll to and highlight specific workout if requested
-            else if (viewWorkoutId) {
-                setTimeout(() => {
-                    const workoutCard = document.querySelector(`.workout-card-compact[data-id="${viewWorkoutId}"]`);
-                    if (workoutCard) {
-                        workoutCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        workoutCard.classList.add('highlighted');
-                        // Expand the workout details
-                        const row = workoutCard.querySelector('.workout-card-row');
-                        if (row) toggleWorkoutDetails(row);
-                    }
-                }, 100);
-            }
-
+            // Set up form handler and nav immediately (no API needed)
             document.getElementById('edit-form').addEventListener('submit', saveWorkout);
-
-            // Mobile nav
             const navToggle = document.getElementById('nav-toggle');
             const navLinks = document.getElementById('nav-links');
             if (navToggle) {
@@ -239,6 +200,50 @@
                     navToggle.classList.toggle('active');
                     navLinks.classList.toggle('show');
                 });
+            }
+
+            // If direct edit requested, open modal immediately (single fast API call)
+            // Don't wait for the rest of the page to load
+            if (editWorkoutId) {
+                editWorkout(parseInt(editWorkoutId));
+            }
+
+            // Load page data in parallel (non-blocking for edit modal)
+            const pageDataPromise = Promise.all([
+                loadConstants(),
+                loadExercises(),
+                loadRecentPlans(),
+                loadBranchBreakdown()
+            ]);
+
+            // Apply exercise filter if set from Library page
+            if (filterExerciseId) {
+                await pageDataPromise; // Need constants/exercises loaded for filter
+                document.getElementById('exercise-filter').value = filterExerciseId;
+                currentExerciseId = filterExerciseId;
+                currentExerciseName = filterExerciseName;
+                showProgressButton(filterExerciseName);
+            }
+
+            await pageDataPromise;
+            await loadWorkouts();
+
+            // Scroll to and highlight specific workout if requested
+            if (viewWorkoutId) {
+                // Auto-expand the workouts section so the card is visible
+                const section = document.getElementById('workouts-section');
+                if (section.classList.contains('collapsed')) {
+                    toggleWorkoutsSection();
+                }
+                setTimeout(() => {
+                    const workoutCard = document.querySelector(`.workout-card-compact[data-id="${viewWorkoutId}"]`);
+                    if (workoutCard) {
+                        workoutCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        workoutCard.classList.add('highlighted');
+                        const row = workoutCard.querySelector('.workout-card-row');
+                        if (row) toggleWorkoutDetails(row);
+                    }
+                }, 100);
             }
         });
 
