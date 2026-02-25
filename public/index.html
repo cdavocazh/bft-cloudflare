@@ -125,7 +125,7 @@
                     <div class="variable-row">
                         <div class="form-group">
                             <div class="variable-label-row">
-                                <label>Reps per Set (or side)</label>
+                                <label id="variable-reps-label">Reps per Set (or side)</label>
                                 <button type="button" class="btn-adj" onclick="adjustAllReps()">adj</button>
                             </div>
                             <div id="variable-reps" class="variable-inputs">
@@ -136,7 +136,7 @@
                     <div class="variable-row">
                         <div class="form-group">
                             <div class="variable-label-row">
-                                <label>Weight per Set (kg)</label>
+                                <label>Weight for Set (kg)</label>
                                 <button type="button" class="btn-adj" onclick="adjustAllWeights()">adj</button>
                             </div>
                             <div id="variable-weights" class="variable-inputs">
@@ -209,6 +209,7 @@
         let allExercisesGlobal = [];    // All exercises in the system (for search)
         let currentEquipmentType = 'BB';
         let currentWeightOptions = [0];
+        let currentMeasureType = 'Rep';
         let isVariableMode = false;
         let isSubmitting = false;
 
@@ -503,19 +504,26 @@
             // Show Progress button
             document.getElementById('progress-link-btn').style.display = '';
 
-            // Get exercise details to check for weight range
+            // Get exercise details to check for weight range and custom increment
             let weightMin = null;
             let weightMax = null;
+            let weightIncrement = null;
             try {
                 const exerciseData = await api.getExercise(id);
                 weightMin = exerciseData.weight_min;
                 weightMax = exerciseData.weight_max;
+                weightIncrement = exerciseData.weight_increment;
+                currentMeasureType = exerciseData.measure_type || 'Rep';
             } catch (error) {
                 console.error('Error loading exercise details:', error);
+                currentMeasureType = 'Rep';
             }
 
+            // Update reps/time label based on measure type
+            updateRepsLabel();
+
             // Load weight options for this equipment type, filtered by exercise range
-            await loadWeightOptions(equipmentType || 'BB', weightMin, weightMax);
+            await loadWeightOptions(equipmentType || 'BB', weightMin, weightMax, weightIncrement);
 
             // Show image if available
             if (imageUrl) {
@@ -529,12 +537,13 @@
             try {
                 const data = await api.getExerciseLatest(id);
                 if (data.latest) {
+                    const heaviestWeight = getHeaviestWeight(data.latest);
                     document.getElementById('suggested-weight').textContent =
-                        `${data.latest.weight_kg}kg × ${data.latest.reps} reps × ${data.latest.sets} sets`;
+                        `${heaviestWeight}kg | ${data.latest.reps} reps x ${data.latest.sets} sets`;
                     document.getElementById('suggested-weight-container').classList.remove('hidden');
 
-                    // Pre-fill with last workout values
-                    document.getElementById('weight').value = data.latest.weight_kg;
+                    // Pre-fill with last workout values (use heaviest weight)
+                    document.getElementById('weight').value = heaviestWeight;
                     document.getElementById('reps').value = data.latest.reps;
                     document.getElementById('sets').value = data.latest.sets;
                 } else {
@@ -547,10 +556,22 @@
             loadRecentWorkouts();
         }
 
-        async function loadWeightOptions(equipmentType, weightMin = null, weightMax = null) {
+        function updateRepsLabel() {
+            const label = document.getElementById('variable-reps-label');
+            if (label) {
+                if (currentMeasureType === 'Time') {
+                    label.textContent = 'Time(s) per Set (or side)';
+                } else {
+                    label.textContent = 'Reps per Set (or side)';
+                }
+            }
+        }
+
+        async function loadWeightOptions(equipmentType, weightMin = null, weightMax = null, exerciseIncrement = null) {
             try {
                 const data = await api.getWeightOptions(equipmentType);
-                const increment = data.increment || 2.5;
+                // Use exercise-specific increment if set, otherwise equipment default
+                const increment = exerciseIncrement || data.increment || 2.5;
 
                 // Generate weight options based on exercise min/max range
                 let options = [];
@@ -563,10 +584,18 @@
                     const minWeight = weightMin !== null ? weightMin : 0;
                     const maxWeight = weightMax !== null ? weightMax : 200;
 
-                    let current = minWeight;
-                    while (current <= maxWeight) {
-                        options.push(Math.round(current * 100) / 100);
-                        current += increment;
+                    // Determine decimal places from increment (e.g., 1.25 -> 2, 2.5 -> 1, 5 -> 0)
+                    const incStr = increment.toString();
+                    const decimalPlaces = incStr.includes('.') ? incStr.split('.')[1].length : 0;
+                    const multiplier = Math.pow(10, decimalPlaces);
+
+                    // Use integer math to avoid floating-point errors
+                    const minInt = Math.round(minWeight * multiplier);
+                    const maxInt = Math.round(maxWeight * multiplier);
+                    const incInt = Math.round(increment * multiplier);
+
+                    for (let i = minInt; i <= maxInt; i += incInt) {
+                        options.push(i / multiplier);
                     }
 
                     // Ensure we have at least some options
@@ -654,7 +683,11 @@
             const currentWeights = [];
             const currentReps = [];
             weightsContainer.querySelectorAll('select').forEach(sel => currentWeights.push(sel.value));
+            // Read current reps from either selects or inputs
             repsContainer.querySelectorAll('select').forEach(sel => currentReps.push(sel.value));
+            if (currentReps.length === 0) {
+                repsContainer.querySelectorAll('input').forEach(inp => currentReps.push(inp.value));
+            }
 
             // If a preserved weight is provided (from mode switch), use it for all sets
             if (preservedWeight && currentWeights.length === 0) {
@@ -687,44 +720,67 @@
                 }
             });
 
-            // Build reps options HTML (1-20)
-            let repsOptionsHtml = '';
-            for (let r = 1; r <= 20; r++) {
-                repsOptionsHtml += `<option value="${r}">${r}</option>`;
-            }
-
-            // Generate reps selects
+            // Generate reps/time inputs
             let repsHtml = '<div class="variable-inputs-row">';
-            for (let i = 0; i < numSets; i++) {
-                const defaultRep = currentReps[i] || '6';
-                repsHtml += `<select class="variable-rep-select" data-set="${i}">${repsOptionsHtml}</select>`;
-                if (i < numSets - 1) repsHtml += '<span class="variable-separator">/</span>';
+            if (currentMeasureType === 'Time') {
+                // Time mode: use number inputs for seconds
+                for (let i = 0; i < numSets; i++) {
+                    const defaultTime = currentReps[i] || '30';
+                    repsHtml += `<input type="number" class="variable-rep-input" data-set="${i}" value="${defaultTime}" min="1" max="999" inputmode="numeric">`;
+                    if (i < numSets - 1) repsHtml += '<span class="variable-separator">/</span>';
+                }
+            } else {
+                // Rep mode: use select dropdowns (1-20)
+                let repsOptionsHtml = '';
+                for (let r = 1; r <= 20; r++) {
+                    repsOptionsHtml += `<option value="${r}">${r}</option>`;
+                }
+                for (let i = 0; i < numSets; i++) {
+                    repsHtml += `<select class="variable-rep-select" data-set="${i}">${repsOptionsHtml}</select>`;
+                    if (i < numSets - 1) repsHtml += '<span class="variable-separator">/</span>';
+                }
             }
             repsHtml += '</div>';
             repsContainer.innerHTML = repsHtml;
 
-            // Set rep values
-            repsContainer.querySelectorAll('select').forEach((sel, i) => {
-                const val = currentReps[i] || '6';
-                sel.value = val;
-            });
+            // Set rep/time values
+            if (currentMeasureType === 'Time') {
+                repsContainer.querySelectorAll('input').forEach((inp, i) => {
+                    inp.value = currentReps[i] || '30';
+                });
+            } else {
+                repsContainer.querySelectorAll('select').forEach((sel, i) => {
+                    const val = currentReps[i] || '6';
+                    sel.value = val;
+                });
+            }
         }
 
         function getVariableData() {
             const weights = [];
             const reps = [];
             document.querySelectorAll('.variable-weight-select').forEach(sel => weights.push(parseFloat(sel.value)));
-            document.querySelectorAll('.variable-rep-select').forEach(sel => reps.push(parseInt(sel.value)));
+            // Handle both select (Rep mode) and input (Time mode)
+            const repSelects = document.querySelectorAll('.variable-rep-select');
+            const repInputs = document.querySelectorAll('.variable-rep-input');
+            if (repSelects.length > 0) {
+                repSelects.forEach(sel => reps.push(parseInt(sel.value)));
+            } else if (repInputs.length > 0) {
+                repInputs.forEach(inp => reps.push(parseInt(inp.value)));
+            }
             return { weights, reps };
         }
 
         function adjustAllReps() {
+            // Handle both select (Rep mode) and input (Time mode)
             const repSelects = document.querySelectorAll('.variable-rep-select');
+            const repInputs = document.querySelectorAll('.variable-rep-input');
             if (repSelects.length > 0) {
                 const firstValue = repSelects[0].value;
-                repSelects.forEach(select => {
-                    select.value = firstValue;
-                });
+                repSelects.forEach(select => { select.value = firstValue; });
+            } else if (repInputs.length > 0) {
+                const firstValue = repInputs[0].value;
+                repInputs.forEach(input => { input.value = firstValue; });
             }
         }
 
@@ -835,6 +891,20 @@
             }
         }
 
+        // Extract the heaviest weight from a workout
+        // For variable mode, parse notes for "[Variable: 15/17.5/20kg × ...]" and return max
+        // Otherwise return the stored weight_kg
+        function getHeaviestWeight(workout) {
+            if (workout.notes) {
+                const match = workout.notes.match(/\[Variable:\s*([\d.\/]+)kg/);
+                if (match) {
+                    const weights = match[1].split('/').map(Number);
+                    return Math.max(...weights);
+                }
+            }
+            return workout.weight_kg;
+        }
+
         function goToExerciseProgress() {
             if (currentSelectedExerciseId) {
                 sessionStorage.setItem('progressExerciseId', currentSelectedExerciseId);
@@ -844,8 +914,8 @@
         }
 
         function goToWorkoutRecord(workoutId) {
-            // Navigate to Workout Records with the date filter set
-            sessionStorage.setItem('viewWorkoutId', workoutId);
+            // Navigate to Workout Records and open edit modal for this workout
+            sessionStorage.setItem('editWorkoutId', workoutId);
             window.location.href = '/all-workouts.html';
         }
 

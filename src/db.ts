@@ -92,8 +92,8 @@ export async function createExercise(db: D1Database, data: CreateExerciseRequest
 
   const result = await db
     .prepare(
-      `INSERT INTO exercises (name, category, subcategory, equipment_type, muscle_main, muscle_additional, weight_min, weight_max, weight_increment, reps_min, reps_max)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO exercises (name, category, subcategory, equipment_type, muscle_main, muscle_additional, weight_min, weight_max, weight_increment, reps_min, reps_max, measure_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       data.exercise_name,
@@ -106,7 +106,8 @@ export async function createExercise(db: D1Database, data: CreateExerciseRequest
       data.weight_max || null,
       data.weight_increment || null,
       data.reps_min || null,
-      data.reps_max || null
+      data.reps_max || null,
+      data.measure_type || 'Rep'
     )
     .run();
 
@@ -168,6 +169,10 @@ export async function updateExercise(db: D1Database, id: number, data: UpdateExe
   if (data.reps_max !== undefined) {
     updates.push('reps_max = ?');
     params.push(data.reps_max && data.reps_max > 0 ? data.reps_max : null);
+  }
+  if (data.measure_type !== undefined) {
+    updates.push('measure_type = ?');
+    params.push(data.measure_type || 'Rep');
   }
 
   if (updates.length === 0) return false;

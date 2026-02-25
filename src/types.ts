@@ -21,6 +21,7 @@ export interface Exercise {
   weight_increment: number | null;
   reps_min: number | null;
   reps_max: number | null;
+  measure_type: string | null;
   created_at: string;
   workout_count?: number;
 }
@@ -101,6 +102,7 @@ export interface CreateExerciseRequest {
   weight_increment?: number;
   reps_min?: number;
   reps_max?: number;
+  measure_type?: string;
 }
 
 export interface UpdateExerciseRequest {
@@ -117,6 +119,7 @@ export interface UpdateExerciseRequest {
   weight_increment?: number;
   reps_min?: number;
   reps_max?: number;
+  measure_type?: string;
 }
 
 export interface CreateWorkoutPlanRequest {

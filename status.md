@@ -275,7 +275,18 @@ wrangler deploy
 30. **Progress (progress.html)**: Added "Lib" button in Statistics section header - links to exercise's Library page for quick access to edit exercise details
 31. **Library (library.html)**: Fixed weight increment input to accept 0.25 increments (allows 1.25kg etc.)
 32. **Workout Records (all-workouts.html)**: Aligned category tag and weight to the right side of workout card title row
+33. **Log Workout (index.html)**: Fixed weight selection using integer math to avoid floating-point rounding errors (e.g., 15 + 2.5 now correctly shows 17.5, not 17)
+34. **Log Workout (index.html)**: Weight selection now uses exercise-specific weight_increment if set, falling back to equipment type default
+35. **Progress (progress.html)**: Clicking a workout in history now opens the Edit Workout modal directly in Workout Records
+36. **Workout Records (all-workouts.html)**: Workout card now shows last set weight instead of weighted average for variable workouts
+37. **Log Workout (index.html)**: Changed "Weight per Set (kg)" label to "Weight for Set (kg)"
+38. **Database**: Added `measure_type` column to exercises table (migration 0007) - values: 'Rep' (default) or 'Time'
+39. **Library (library.html)**: Added "Rep / Time" dropdown to exercise edit modal - configures whether exercise tracks reps or time in seconds
+40. **Log Workout (index.html)**: "Reps per Set (or side)" label dynamically changes to "Time(s) per Set (or side)" for time-based exercises; time inputs use number fields (seconds) instead of 1-20 dropdowns
+41. **CSS (style.css)**: Fixed dark mode colors for expanded workout log details in All Workouts tab - changed white background (#fafafa) to dark (#2a2a2a) with bright text, also fixed dark mode for category tags, modal, dropdowns, pagination inputs, and other elements
+42. **Log Workout (index.html)**: "Last workout" display now shows heaviest weight (parsed from variable notes) instead of averaged weight, with new format: "22.5kg | 8 reps x 3 sets"
+43. **Log Workout (index.html)**: Recent workouts section items now navigate to the Edit Workout modal directly in Workout Records tab (fixed issue where Workouts section was collapsed, making highlighted workout invisible)
 
 ---
 
-*Last updated: February 5, 2026*
+*Last updated: February 25, 2026*
