@@ -104,24 +104,17 @@
         let chart = null;
         let overviewChart = null;
         let progressionData = [];
+        let cachedExercises = [];
 
         document.addEventListener('DOMContentLoaded', async function() {
-            await loadConstants();
-            await loadExercises();
-
-            // Check for incoming filter from All Workouts page
+            // Read sessionStorage flags immediately
             const progressExerciseId = sessionStorage.getItem('progressExerciseId');
             if (progressExerciseId) {
-                document.getElementById('exercise-select').value = progressExerciseId;
                 sessionStorage.removeItem('progressExerciseId');
                 sessionStorage.removeItem('progressExerciseName');
-                loadProgression();
-            } else {
-                // Show overview chart when no exercise is selected
-                await loadOverview();
             }
 
-            // Mobile nav
+            // Set up nav immediately (no API needed)
             const navToggle = document.getElementById('nav-toggle');
             const navLinks = document.getElementById('nav-links');
             if (navToggle) {
@@ -130,29 +123,48 @@
                     navLinks.classList.toggle('show');
                 });
             }
+
+            // If redirected with exercise ID, start loading progression data immediately
+            // in parallel with page setup (don't wait for dropdowns)
+            let progressionPromise = null;
+            if (progressExerciseId) {
+                progressionPromise = loadProgression(progressExerciseId);
+            }
+
+            // Load constants and exercises in parallel
+            await Promise.all([loadConstants(), loadExercises()]);
+
+            // Set exercise dropdown value after exercises are loaded, update heading
+            if (progressExerciseId) {
+                document.getElementById('exercise-select').value = progressExerciseId;
+                await progressionPromise;
+                // Now update exercise name heading with actual name from dropdown
+                const selectEl = document.getElementById('exercise-select');
+                if (selectEl.value && selectEl.selectedOptions[0]) {
+                    document.getElementById('exercise-name').textContent = selectEl.selectedOptions[0].text + ' Progress';
+                }
+            } else {
+                // Show overview chart when no exercise is selected
+                await loadOverview();
+            }
         });
 
-        async function loadOverview() {
-            try {
-                // Get all exercises with workout counts
-                const data = await api.getExercises({});
-                const exercisesWithLogs = data.exercises
-                    .filter(ex => ex.workout_count > 0)
-                    .sort((a, b) => b.workout_count - a.workout_count)
-                    .slice(0, 10);
+        function loadOverview() {
+            // Use cached exercises from loadExercises() - no extra API call needed
+            const exercisesWithLogs = cachedExercises
+                .filter(ex => ex.workout_count > 0)
+                .sort((a, b) => b.workout_count - a.workout_count)
+                .slice(0, 10);
 
-                if (exercisesWithLogs.length === 0) {
-                    document.getElementById('overview-container').innerHTML = `
-                        <h2>Most Logged Exercises</h2>
-                        <p class="text-muted">No workout logs yet. Start logging to see your progress!</p>
-                    `;
-                    return;
-                }
-
-                renderOverviewChart(exercisesWithLogs);
-            } catch (error) {
-                console.error('Error loading overview:', error);
+            if (exercisesWithLogs.length === 0) {
+                document.getElementById('overview-container').innerHTML = `
+                    <h2>Most Logged Exercises</h2>
+                    <p class="text-muted">No workout logs yet. Start logging to see your progress!</p>
+                `;
+                return;
             }
+
+            renderOverviewChart(exercisesWithLogs);
         }
 
         function renderOverviewChart(exercises) {
@@ -227,6 +239,7 @@
                 if (category) params.category = category;
 
                 const data = await api.getExercises(params);
+                cachedExercises = data.exercises;
                 const select = document.getElementById('exercise-select');
                 select.innerHTML = '<option value="">Select exercise...</option>' +
                     data.exercises.map(ex => `<option value="${ex.id}">${ex.name}</option>`).join('');
@@ -236,8 +249,8 @@
             }
         }
 
-        async function loadProgression() {
-            const exerciseId = document.getElementById('exercise-select').value;
+        async function loadProgression(overrideExerciseId) {
+            const exerciseId = overrideExerciseId || document.getElementById('exercise-select').value;
             if (!exerciseId) {
                 // Show overview, hide exercise-specific sections
                 document.getElementById('overview-container').style.display = 'block';
@@ -255,7 +268,11 @@
                 const data = await api.getProgression(exerciseId);
                 progressionData = data.progression;
 
-                const exerciseName = document.getElementById('exercise-select').selectedOptions[0].text;
+                // Get exercise name from dropdown if available, use placeholder otherwise
+                const selectEl = document.getElementById('exercise-select');
+                const exerciseName = (selectEl.value && selectEl.selectedOptions[0] && selectEl.selectedOptions[0].text !== 'Select exercise...')
+                    ? selectEl.selectedOptions[0].text
+                    : 'Exercise';
                 document.getElementById('exercise-name').textContent = exerciseName + ' Progress';
 
                 // Always show the header with +1 button
@@ -335,6 +352,20 @@
                 `${latest.weight_kg} kg` : '-';
         }
 
+        // Extract the heaviest weight from a workout record
+        // For variable mode, parse notes for "[Variable: 15/17.5/20kg × ...]" and return max
+        // Otherwise return the stored weight_kg
+        function getHeaviestWeight(workout) {
+            if (workout.notes) {
+                const match = workout.notes.match(/\[Variable:\s*([\d.\/]+)kg/);
+                if (match) {
+                    const weights = match[1].split('/').map(Number);
+                    return Math.max(...weights);
+                }
+            }
+            return workout.weight_kg;
+        }
+
         function updateHistory() {
             const container = document.getElementById('workout-history');
             const reversed = [...progressionData].reverse();
@@ -342,7 +373,7 @@
             container.innerHTML = reversed.slice(0, 10).map(w => `
                 <div class="history-item history-item-clickable" onclick="goToWorkoutRecord(${w.id})">
                     <span class="history-date">${formatDate(w.workout_date)}</span>
-                    <span class="history-details">${w.weight_kg} kg</span>
+                    <span class="history-details">${getHeaviestWeight(w)} kg</span>
                 </div>
             `).join('');
         }

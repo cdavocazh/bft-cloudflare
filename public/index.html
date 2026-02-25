@@ -214,29 +214,40 @@
         let isSubmitting = false;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            // Load constants from API
-            await loadConstants();
-
-            // Set default date
-            document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
-
-            // Load exercises
-            await loadExercises();
-
-            // Check for exercise ID from Library page (+1 button) or Progress page
+            // Read sessionStorage flags immediately
             const logExerciseId = sessionStorage.getItem('logExerciseId');
             const logExerciseCategory = sessionStorage.getItem('logExerciseCategory');
             if (logExerciseId) {
                 sessionStorage.removeItem('logExerciseId');
                 sessionStorage.removeItem('logExerciseCategory');
                 sessionStorage.removeItem('logExerciseName');
+            }
 
-                // Set category if provided
+            // Set default date (no API needed)
+            document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
+
+            // Set up form handler and nav immediately (no API needed)
+            document.getElementById('workout-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await submitWorkout();
+            });
+            document.getElementById('export-btn').addEventListener('click', exportWorkouts);
+
+            // Load constants and global exercises in parallel
+            const [, allExData] = await Promise.all([
+                loadConstants(),
+                api.getExercises({})
+            ]);
+            allExercisesGlobal = allExData.exercises;
+
+            // Now load filtered exercises (needs constants for category dropdown)
+            await loadExercises();
+
+            // If redirected from Library/Progress, select exercise immediately
+            if (logExerciseId) {
                 if (logExerciseCategory) {
                     document.getElementById('category').value = logExerciseCategory;
                 }
-
-                // Find and select the exercise
                 const exercise = allExercisesGlobal.find(ex => ex.id === parseInt(logExerciseId));
                 if (exercise) {
                     await selectExercise(exercise.id, exercise.name, exercise.equipment_type, exercise.image_url);
@@ -247,15 +258,6 @@
 
             // Initialize variable inputs
             updateVariableInputs();
-
-            // Form submission
-            document.getElementById('workout-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                await submitWorkout();
-            });
-
-            // Export button
-            document.getElementById('export-btn').addEventListener('click', exportWorkouts);
 
             // Mobile nav toggle
             const navToggle = document.getElementById('nav-toggle');
@@ -358,7 +360,7 @@
             }
         }
 
-        function renderExerciseDropdown(exercises, searchTerm = '') {
+        function renderExerciseDropdown(exercises, searchTerm = '', totalCount = 0) {
             const dropdown = document.getElementById('exercise-dropdown');
 
             if (exercises.length === 0) {
@@ -383,6 +385,12 @@
                     <a href="/library.html?exercise=${ex.id}" class="exercise-lib-link" onclick="event.stopPropagation()">lib</a>
                 </div>
             `).join('');
+
+            // Show hint if more results exist beyond the displayed limit
+            const displayedCount = exercises.length;
+            if (totalCount > displayedCount) {
+                html += `<div class="exercise-option disabled" style="font-size:0.8rem; text-align:center;">Showing ${displayedCount} of ${totalCount} — type to narrow</div>`;
+            }
 
             // Also add "create new" option if search term doesn't exactly match any exercise
             if (searchTerm.trim() && !exercises.some(ex => ex.name.toLowerCase() === searchTerm.toLowerCase())) {
@@ -452,25 +460,35 @@
             }
         }
 
-        function filterExercises() {
-            const searchTerm = document.getElementById('exercise-search').value.trim();
-            const searchTermLower = searchTerm.toLowerCase();
+        let exerciseFilterTimer = null;
+        const MAX_DROPDOWN_ITEMS = 20;
 
-            if (searchTerm === '') {
-                // No search term: show filtered exercises (based on category/equipment)
-                renderExerciseDropdown(allExercisesData, '');
-            } else {
-                // Search term: search ALL exercises globally
-                const filtered = allExercisesGlobal.filter(ex =>
-                    ex.name.toLowerCase().includes(searchTermLower)
-                );
-                renderExerciseDropdown(filtered, searchTerm);
-            }
-            showExerciseDropdown();
+        function filterExercises() {
+            // Debounce to avoid rebuilding DOM on every keystroke
+            clearTimeout(exerciseFilterTimer);
+            exerciseFilterTimer = setTimeout(() => {
+                const searchTerm = document.getElementById('exercise-search').value.trim();
+                const searchTermLower = searchTerm.toLowerCase();
+
+                if (searchTerm === '') {
+                    renderExerciseDropdown(allExercisesData.slice(0, MAX_DROPDOWN_ITEMS), '', allExercisesData.length);
+                } else {
+                    const filtered = allExercisesGlobal.filter(ex =>
+                        ex.name.toLowerCase().includes(searchTermLower)
+                    );
+                    renderExerciseDropdown(filtered.slice(0, MAX_DROPDOWN_ITEMS), searchTerm, filtered.length);
+                }
+                showExerciseDropdown();
+            }, 100);
         }
 
         function showExerciseDropdown() {
-            document.getElementById('exercise-dropdown').classList.remove('hidden');
+            const dropdown = document.getElementById('exercise-dropdown');
+            // If dropdown is empty (first focus), render limited list
+            if (!dropdown.innerHTML.trim()) {
+                renderExerciseDropdown(allExercisesData.slice(0, MAX_DROPDOWN_ITEMS), '', allExercisesData.length);
+            }
+            dropdown.classList.remove('hidden');
         }
 
         function hideExerciseDropdown() {
@@ -504,28 +522,7 @@
             // Show Progress button
             document.getElementById('progress-link-btn').style.display = '';
 
-            // Get exercise details to check for weight range and custom increment
-            let weightMin = null;
-            let weightMax = null;
-            let weightIncrement = null;
-            try {
-                const exerciseData = await api.getExercise(id);
-                weightMin = exerciseData.weight_min;
-                weightMax = exerciseData.weight_max;
-                weightIncrement = exerciseData.weight_increment;
-                currentMeasureType = exerciseData.measure_type || 'Rep';
-            } catch (error) {
-                console.error('Error loading exercise details:', error);
-                currentMeasureType = 'Rep';
-            }
-
-            // Update reps/time label based on measure type
-            updateRepsLabel();
-
-            // Load weight options for this equipment type, filtered by exercise range
-            await loadWeightOptions(equipmentType || 'BB', weightMin, weightMax, weightIncrement);
-
-            // Show image if available
+            // Show image immediately (no API needed)
             if (imageUrl) {
                 document.getElementById('exercise-image').src = imageUrl;
                 document.getElementById('exercise-image-container').classList.remove('hidden');
@@ -533,23 +530,43 @@
                 document.getElementById('exercise-image-container').classList.add('hidden');
             }
 
-            // Load suggested weight
-            try {
-                const data = await api.getExerciseLatest(id);
-                if (data.latest) {
-                    const heaviestWeight = getHeaviestWeight(data.latest);
-                    document.getElementById('suggested-weight').textContent =
-                        `${heaviestWeight}kg | ${data.latest.reps} reps x ${data.latest.sets} sets`;
-                    document.getElementById('suggested-weight-container').classList.remove('hidden');
+            // Fetch exercise details, weight options, and latest workout in parallel
+            const [exerciseData, weightOptionsData, latestData] = await Promise.all([
+                api.getExercise(id).catch(err => { console.error('Error loading exercise details:', err); return null; }),
+                api.getWeightOptions(equipmentType || 'BB').catch(err => { console.error('Error loading weight options:', err); return null; }),
+                api.getExerciseLatest(id).catch(err => { console.error('Error loading latest workout:', err); return null; })
+            ]);
 
-                    // Pre-fill with last workout values (use heaviest weight)
-                    document.getElementById('weight').value = heaviestWeight;
-                    document.getElementById('reps').value = data.latest.reps;
-                    document.getElementById('sets').value = data.latest.sets;
-                } else {
-                    document.getElementById('suggested-weight-container').classList.add('hidden');
-                }
-            } catch (error) {
+            // Apply exercise details
+            let weightMin = null, weightMax = null, weightIncrement = null;
+            if (exerciseData) {
+                weightMin = exerciseData.weight_min;
+                weightMax = exerciseData.weight_max;
+                weightIncrement = exerciseData.weight_increment;
+                currentMeasureType = exerciseData.measure_type || 'Rep';
+            } else {
+                currentMeasureType = 'Rep';
+            }
+            updateRepsLabel();
+
+            // Build weight options using already-fetched data
+            if (weightOptionsData) {
+                const increment = weightIncrement || weightOptionsData.increment || 2.5;
+                buildWeightDropdown(increment, weightMin, weightMax);
+            }
+
+            // Apply latest workout data
+            if (latestData && latestData.latest) {
+                const heaviestWeight = getHeaviestWeight(latestData.latest);
+                document.getElementById('suggested-weight').textContent =
+                    `${heaviestWeight}kg | ${latestData.latest.reps} reps x ${latestData.latest.sets} sets`;
+                document.getElementById('suggested-weight-container').classList.remove('hidden');
+
+                // Pre-fill with last workout values (use heaviest weight)
+                document.getElementById('weight').value = heaviestWeight;
+                document.getElementById('reps').value = latestData.latest.reps;
+                document.getElementById('sets').value = latestData.latest.sets;
+            } else {
                 document.getElementById('suggested-weight-container').classList.add('hidden');
             }
 
@@ -567,60 +584,55 @@
             }
         }
 
+        // Build weight dropdown from increment and min/max range (no API call)
+        function buildWeightDropdown(increment, weightMin = null, weightMax = null) {
+            let options = [];
+
+            if (increment === 0) {
+                options = [0];
+            } else {
+                const minWeight = weightMin !== null ? weightMin : 0;
+                const maxWeight = weightMax !== null ? weightMax : 200;
+
+                const incStr = increment.toString();
+                const decimalPlaces = incStr.includes('.') ? incStr.split('.')[1].length : 0;
+                const multiplier = Math.pow(10, decimalPlaces);
+
+                const minInt = Math.round(minWeight * multiplier);
+                const maxInt = Math.round(maxWeight * multiplier);
+                const incInt = Math.round(increment * multiplier);
+
+                for (let i = minInt; i <= maxInt; i += incInt) {
+                    options.push(i / multiplier);
+                }
+
+                if (options.length === 0) {
+                    options = [0];
+                }
+            }
+
+            currentWeightOptions = options;
+            const weightSelect = document.getElementById('weight');
+            const currentValue = weightSelect.value;
+
+            weightSelect.innerHTML = options.map(w =>
+                `<option value="${w}">${w}</option>`
+            ).join('');
+
+            if (options.includes(parseFloat(currentValue))) {
+                weightSelect.value = currentValue;
+            }
+
+            if (isVariableMode) {
+                updateVariableInputs();
+            }
+        }
+
         async function loadWeightOptions(equipmentType, weightMin = null, weightMax = null, exerciseIncrement = null) {
             try {
                 const data = await api.getWeightOptions(equipmentType);
-                // Use exercise-specific increment if set, otherwise equipment default
                 const increment = exerciseIncrement || data.increment || 2.5;
-
-                // Generate weight options based on exercise min/max range
-                let options = [];
-
-                if (increment === 0) {
-                    // Bodyweight: only 0
-                    options = [0];
-                } else {
-                    // Use exercise weight range, or defaults if not set
-                    const minWeight = weightMin !== null ? weightMin : 0;
-                    const maxWeight = weightMax !== null ? weightMax : 200;
-
-                    // Determine decimal places from increment (e.g., 1.25 -> 2, 2.5 -> 1, 5 -> 0)
-                    const incStr = increment.toString();
-                    const decimalPlaces = incStr.includes('.') ? incStr.split('.')[1].length : 0;
-                    const multiplier = Math.pow(10, decimalPlaces);
-
-                    // Use integer math to avoid floating-point errors
-                    const minInt = Math.round(minWeight * multiplier);
-                    const maxInt = Math.round(maxWeight * multiplier);
-                    const incInt = Math.round(increment * multiplier);
-
-                    for (let i = minInt; i <= maxInt; i += incInt) {
-                        options.push(i / multiplier);
-                    }
-
-                    // Ensure we have at least some options
-                    if (options.length === 0) {
-                        options = [0];
-                    }
-                }
-
-                currentWeightOptions = options;
-                const weightSelect = document.getElementById('weight');
-                const currentValue = weightSelect.value;
-
-                weightSelect.innerHTML = options.map(w =>
-                    `<option value="${w}">${w}</option>`
-                ).join('');
-
-                // Restore previous value if it exists in new options
-                if (options.includes(parseFloat(currentValue))) {
-                    weightSelect.value = currentValue;
-                }
-
-                // Update variable weight selects if in variable mode
-                if (isVariableMode) {
-                    updateVariableInputs();
-                }
+                buildWeightDropdown(increment, weightMin, weightMax);
             } catch (error) {
                 console.error('Error loading weight options:', error);
             }

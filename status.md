@@ -286,6 +286,13 @@ wrangler deploy
 41. **CSS (style.css)**: Fixed dark mode colors for expanded workout log details in All Workouts tab - changed white background (#fafafa) to dark (#2a2a2a) with bright text, also fixed dark mode for category tags, modal, dropdowns, pagination inputs, and other elements
 42. **Log Workout (index.html)**: "Last workout" display now shows heaviest weight (parsed from variable notes) instead of averaged weight, with new format: "22.5kg | 8 reps x 3 sets"
 43. **Log Workout (index.html)**: Recent workouts section items now navigate to the Edit Workout modal directly in Workout Records tab (fixed issue where Workouts section was collapsed, making highlighted workout invisible)
+44. **Workout Records (all-workouts.html)**: Faster redirect when opening a specific workout - edit modal now opens immediately without waiting for page data to load (was waiting for 5 API calls); also auto-expands Workouts section for viewWorkoutId navigation
+45. **Log Workout (index.html)**: Parallelized page init - loadConstants + global exercises fetch now run in parallel (was sequential); saves ~1 API round trip on every page load
+46. **Log Workout (index.html)**: Parallelized selectExercise - getExercise, getWeightOptions, and getExerciseLatest now run in parallel (was 3 sequential calls); extracted buildWeightDropdown helper to avoid redundant API call
+47. **Progress (progress.html)**: Parallelized page init - loadConstants + loadExercises now run in parallel; when redirected with exercise ID, progression data loads simultaneously with page setup instead of waiting for dropdowns first
+48. **Log Workout (index.html)**: Exercise search dropdown now debounced (100ms) and limited to 20 items max with "type to narrow" hint - eliminates lag from rendering large exercise lists on every keystroke
+49. **Progress (progress.html)**: Workout history now shows heaviest weight (parsed from variable workout notes) instead of averaged weight for each record
+50. **Progress (progress.html)**: Overview "Most Logged Exercises" chart now renders instantly from cached exercise data instead of making a duplicate `getExercises` API call
 
 ---
 
