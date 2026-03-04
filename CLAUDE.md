@@ -55,12 +55,19 @@ bft-cloudflare/
 
 ## Important Rules
 
-### 1. Always Update status.md
-After making ANY feature changes, you MUST update `status.md`:
+### 1. Always Update Documentation
+After making ANY significant code changes, you MUST update both:
+
+**`status.md`** — for feature and change tracking:
 - Add new features to the appropriate page's table
 - Mark completed features with ✅ Done
 - Add entry to "Recent Changes (This Session)" section at the bottom
 - Update the "Last updated" date
+
+**`CLAUDE.md`** — for significant structural or architectural changes:
+- New API endpoints, pages, or major components
+- Changes to project structure, conventions, or patterns
+- New utility functions or shared helpers that future sessions should know about
 
 Example status.md update:
 ```markdown
@@ -149,6 +156,7 @@ wrangler deploy
 
 Before ending a session, ensure:
 - [ ] All requested features are implemented
-- [ ] status.md is updated with all changes
+- [ ] status.md is updated with all feature and code changes
+- [ ] CLAUDE.md is updated if any significant structural changes were made
 - [ ] No console errors in browser
 - [ ] Mobile layout is not broken

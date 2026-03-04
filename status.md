@@ -293,7 +293,8 @@ wrangler deploy
 48. **Log Workout (index.html)**: Exercise search dropdown now debounced (100ms) and limited to 20 items max with "type to narrow" hint - eliminates lag from rendering large exercise lists on every keystroke
 49. **Progress (progress.html)**: Workout history now shows heaviest weight (parsed from variable workout notes) instead of averaged weight for each record
 50. **Progress (progress.html)**: Overview "Most Logged Exercises" chart now renders instantly from cached exercise data instead of making a duplicate `getExercises` API call
+51. **Documentation (CLAUDE.md)**: Added rule requiring CLAUDE.md updates for significant structural/architectural code changes alongside status.md updates; updated session checklist accordingly
 
 ---
 
-*Last updated: February 25, 2026*
+*Last updated: March 4, 2026*
