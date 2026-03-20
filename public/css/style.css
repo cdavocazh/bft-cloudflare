@@ -1870,6 +1870,17 @@ h1 {
     min-height: 26px;
 }
 
+.btn-progress-link {
+    color: var(--success-color, #28a745);
+    border-color: var(--success-color, #28a745);
+    text-decoration: none;
+}
+
+.btn-progress-link:hover {
+    background-color: var(--success-color, #28a745);
+    color: white;
+}
+
 /* Exercise log count badge (inline with buttons) */
 .exercise-log-count-inline {
     background-color: #4CAF50;
