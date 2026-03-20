@@ -107,8 +107,9 @@
         let cachedExercises = [];
 
         document.addEventListener('DOMContentLoaded', async function() {
-            // Read sessionStorage flags immediately
-            const progressExerciseId = sessionStorage.getItem('progressExerciseId');
+            // Read exercise ID from URL parameter or sessionStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            let progressExerciseId = urlParams.get('exercise') || sessionStorage.getItem('progressExerciseId');
             if (progressExerciseId) {
                 sessionStorage.removeItem('progressExerciseId');
                 sessionStorage.removeItem('progressExerciseName');

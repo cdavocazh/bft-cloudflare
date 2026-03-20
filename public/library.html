@@ -385,6 +385,7 @@
                         <div class="exercise-card-actions">
                             <button class="btn btn-sm btn-success" onclick="logExercise(${ex.id}, '${ex.category}')" title="Quick log">+1</button>
                             <button class="btn btn-sm btn-outline" onclick="viewLogs(${ex.id}, '${ex.name.replace(/'/g, "\\'")}')" title="View all logs">Logs</button>
+                            <a href="/progress.html?exercise=${ex.id}" class="btn btn-sm btn-outline btn-progress-link" title="View progress">Progress</a>
                             <button class="btn btn-sm btn-secondary" onclick="editExercise(${ex.id})">Edit</button>
                             ${ex.workout_count ? `<span class="exercise-log-count-inline">${ex.workout_count}</span>` : ''}
                         </div>

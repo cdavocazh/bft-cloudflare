@@ -580,7 +580,7 @@
                             </div>
                             ${w.notes ? `<div class="workout-notes">${w.notes}</div>` : ''}
                             <div class="workout-card-actions-compact">
-                                <button class="btn-compact btn-progress" onclick="event.stopPropagation(); goToExerciseProgress(${w.exercise_id}, '${escapedName}')">Progress</button>
+                                <button class="btn-compact btn-progress" onclick="event.stopPropagation(); goToExerciseProgress(${w.exercise_id}, '${escapedName}')">View Progress</button>
                                 <button class="btn-compact btn-edit" onclick="event.stopPropagation(); editWorkout(${w.id})">Edit</button>
                                 <button class="btn-compact btn-delete" onclick="event.stopPropagation(); deleteWorkout(${w.id})">Delete</button>
                             </div>
