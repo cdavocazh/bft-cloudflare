@@ -50,6 +50,7 @@ Main page for logging individual workout sets.
 - CSV export
 
 **Navigation:**
+- "progress" link per exercise → jumps to Progress page for that exercise
 - "lib" link per exercise → jumps to Library with exercise highlighted
 - "Browse Library" link → opens Library page
 
@@ -81,6 +82,7 @@ Exercise management and browsing.
   - Workout log count badge
   - Quick log (+1) → jumps to Log Workout with exercise pre-selected
   - View Logs → jumps to Workout Records filtered
+  - Progress → jumps to Progress page for that exercise
   - Edit button
 - Add/Edit exercise modal:
   - Name, categories (multi-select checkboxes), subcategory
@@ -294,7 +296,11 @@ wrangler deploy
 49. **Progress (progress.html)**: Workout history now shows heaviest weight (parsed from variable workout notes) instead of averaged weight for each record
 50. **Progress (progress.html)**: Overview "Most Logged Exercises" chart now renders instantly from cached exercise data instead of making a duplicate `getExercises` API call
 51. **Documentation (CLAUDE.md)**: Added rule requiring CLAUDE.md updates for significant structural/architectural code changes alongside status.md updates; updated session checklist accordingly
+52. **Log Workout (index.html)**: Added "progress" link beside each exercise option in the exercise dropdown, linking directly to the progress page for that exercise; progress.html now supports `?exercise=ID` URL parameter
+53. **Workout Records (all-workouts.html)**: Changed per-workout "Progress" button label to "View Progress" for clarity
+54. **Library (library.html)**: Added "Progress" button to each exercise card actions, linking to the Progress page for that exercise
+55. **Log Workout (index.html)**: Made recent workout entries expandable inline — clicking shows weight/reps/sets, notes, tags, and an Edit button instead of redirecting to Workout Records
 
 ---
 
-*Last updated: March 4, 2026*
+*Last updated: March 20, 2026*
