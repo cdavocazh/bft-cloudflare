@@ -296,6 +296,7 @@ wrangler deploy
 50. **Progress (progress.html)**: Overview "Most Logged Exercises" chart now renders instantly from cached exercise data instead of making a duplicate `getExercises` API call
 51. **Documentation (CLAUDE.md)**: Added rule requiring CLAUDE.md updates for significant structural/architectural code changes alongside status.md updates; updated session checklist accordingly
 52. **Log Workout (index.html)**: Added "progress" link beside each exercise option in the exercise dropdown, linking directly to the progress page for that exercise; progress.html now supports `?exercise=ID` URL parameter
+53. **Workout Records (all-workouts.html)**: Changed per-workout "Progress" button label to "View Progress" for clarity
 
 ---
 
