@@ -382,6 +382,7 @@
                 <div class="exercise-option" data-id="${ex.id}">
                     <span class="exercise-option-name" onclick="selectExercise(${ex.id}, '${ex.name.replace(/'/g, "\\'")}', '${ex.equipment_type || 'default'}', '${ex.image_url || ''}')">${ex.name}</span>
                     <span class="exercise-category-tags">${getCategoryTags(ex)}</span>
+                    <a href="/progress.html?exercise=${ex.id}" class="exercise-lib-link exercise-progress-link" onclick="event.stopPropagation()">progress</a>
                     <a href="/library.html?exercise=${ex.id}" class="exercise-lib-link" onclick="event.stopPropagation()">lib</a>
                 </div>
             `).join('');

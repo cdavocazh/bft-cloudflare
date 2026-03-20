@@ -1468,6 +1468,16 @@ h1 {
     color: white;
 }
 
+.exercise-progress-link {
+    color: var(--success-color, #28a745);
+    border-color: var(--success-color, #28a745);
+}
+
+.exercise-progress-link:hover {
+    background-color: var(--success-color, #28a745);
+    color: white;
+}
+
 /* Exercise label row with Browse Library link */
 .exercise-label-row {
     display: flex;
