@@ -1106,18 +1106,21 @@ h1 {
     gap: 0.75rem;
 }
 
+.workout-item-expandable {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.workout-item-expandable:last-child {
+    border-bottom: none;
+}
+
 .workout-item-compact {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.6rem 0.75rem;
-    border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     transition: background-color 0.2s;
-}
-
-.workout-item-compact:last-child {
-    border-bottom: none;
 }
 
 .workout-item-compact:hover {
@@ -1137,6 +1140,41 @@ h1 {
     font-size: 0.8rem;
     color: var(--text-light);
     margin-left: 0.5rem;
+}
+
+.workout-expand-icon {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    margin-left: 0.5rem;
+}
+
+.workout-item-detail {
+    padding: 0.4rem 0.75rem 0.6rem;
+    background-color: rgba(100, 181, 246, 0.05);
+    border-top: 1px solid var(--border-color);
+}
+
+.workout-detail-stats {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.workout-detail-notes {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+    word-break: break-word;
+}
+
+.workout-detail-tags {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.workout-detail-actions {
+    margin-top: 0.3rem;
 }
 
 .variable-row {
