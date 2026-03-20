@@ -300,6 +300,8 @@ wrangler deploy
 53. **Workout Records (all-workouts.html)**: Changed per-workout "Progress" button label to "View Progress" for clarity
 54. **Library (library.html)**: Added "Progress" button to each exercise card actions, linking to the Progress page for that exercise
 55. **Log Workout (index.html)**: Made recent workout entries expandable inline — clicking shows weight/reps/sets, notes, tags, and an Edit button instead of redirecting to Workout Records
+56. **Progress (progress.html)**: Made workout history entries expandable inline (same accordion pattern as Log Workout) instead of redirecting to Workout Records
+57. **Log Workout (index.html)**: Shortened exercise dropdown links — "progress" → "Prog", "lib" → "Lib"
 
 ---
 
