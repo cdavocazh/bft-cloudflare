@@ -372,11 +372,35 @@
             const reversed = [...progressionData].reverse();
 
             container.innerHTML = reversed.slice(0, 10).map(w => `
-                <div class="history-item history-item-clickable" onclick="goToWorkoutRecord(${w.id})">
-                    <span class="history-date">${formatDate(w.workout_date)}</span>
-                    <span class="history-details">${getHeaviestWeight(w)} kg</span>
+                <div class="workout-item-expandable" data-workout-id="${w.id}">
+                    <div class="workout-item-compact" onclick="toggleWorkoutDetail(this)">
+                        <span class="history-date">${formatDate(w.workout_date)}</span>
+                        <span class="history-details">${getHeaviestWeight(w)} kg</span>
+                        <span class="workout-expand-icon">▶</span>
+                    </div>
+                    <div class="workout-item-detail hidden">
+                        <div class="workout-detail-stats">${w.weight_kg}kg × ${w.reps} reps × ${w.sets} sets</div>
+                        ${w.notes ? `<div class="workout-detail-notes">${w.notes}</div>` : ''}
+                        ${w.tags ? `<div class="workout-detail-tags">${w.tags}</div>` : ''}
+                        <div class="workout-detail-actions">
+                            <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); goToWorkoutRecord(${w.id})">Edit</button>
+                        </div>
+                    </div>
                 </div>
             `).join('');
+        }
+
+        function toggleWorkoutDetail(header) {
+            const detail = header.nextElementSibling;
+            const icon = header.querySelector('.workout-expand-icon');
+            const isOpen = !detail.classList.contains('hidden');
+            if (isOpen) {
+                detail.classList.add('hidden');
+                icon.textContent = '▶';
+            } else {
+                detail.classList.remove('hidden');
+                icon.textContent = '▼';
+            }
         }
 
         function goToWorkoutRecord(workoutId) {
