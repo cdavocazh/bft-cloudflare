@@ -926,6 +926,19 @@
             }
         }
 
+        function toggleWorkoutDetail(header) {
+            const detail = header.nextElementSibling;
+            const icon = header.querySelector('.workout-expand-icon');
+            const isOpen = !detail.classList.contains('hidden');
+            if (isOpen) {
+                detail.classList.add('hidden');
+                icon.textContent = '▶';
+            } else {
+                detail.classList.remove('hidden');
+                icon.textContent = '▼';
+            }
+        }
+
         function goToWorkoutRecord(workoutId) {
             // Navigate to Workout Records and open edit modal for this workout
             sessionStorage.setItem('editWorkoutId', workoutId);
@@ -951,9 +964,20 @@
                 }
 
                 container.innerHTML = data.workouts.map(w => `
-                    <div class="workout-item-compact" onclick="goToWorkoutRecord(${w.id})">
-                        <strong>${w.exercise_name}</strong>
-                        <span class="workout-date">${formatDate(w.workout_date)}</span>
+                    <div class="workout-item-expandable" data-workout-id="${w.id}">
+                        <div class="workout-item-compact" onclick="toggleWorkoutDetail(this)">
+                            <strong>${w.exercise_name}</strong>
+                            <span class="workout-date">${formatDate(w.workout_date)}</span>
+                            <span class="workout-expand-icon">▶</span>
+                        </div>
+                        <div class="workout-item-detail hidden">
+                            <div class="workout-detail-stats">${w.weight_kg}kg × ${w.reps} reps × ${w.sets} sets</div>
+                            ${w.notes ? `<div class="workout-detail-notes">${w.notes}</div>` : ''}
+                            ${w.tags ? `<div class="workout-detail-tags">${w.tags}</div>` : ''}
+                            <div class="workout-detail-actions">
+                                <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); goToWorkoutRecord(${w.id})">Edit</button>
+                            </div>
+                        </div>
                     </div>
                 `).join('');
             } catch (error) {
