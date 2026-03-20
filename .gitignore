@@ -8,10 +8,20 @@ dist/
 .wrangler/
 .dev.vars
 
-# Environment files
+# Environment variables
 .env
 .env.local
 .env.*.local
+.env.production
+
+# Credentials / keys
+*.pem
+*.key
+credentials.*
+
+# Virtual environments
+.venv/
+venv/
 
 # Editor files
 .idea/
@@ -23,6 +33,9 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
+
+# macOS launchd plists
+*.plist
 
 # Logs
 *.log
