@@ -302,7 +302,9 @@ wrangler deploy
 55. **Log Workout (index.html)**: Made recent workout entries expandable inline — clicking shows weight/reps/sets, notes, tags, and an Edit button instead of redirecting to Workout Records
 56. **Progress (progress.html)**: Made workout history entries expandable inline (same accordion pattern as Log Workout) instead of redirecting to Workout Records
 57. **Log Workout (index.html)**: Shortened exercise dropdown links — "progress" → "Prog", "lib" → "Lib"
+58. **Plan (plan.html)**: Added "History" button next to "Recent Plans" heading — opens a modal showing all branch visit history grouped by branch with dates and themes; clicking an entry navigates to that plan
+59. **Backend (plans.ts)**: Added `/api/plans/branch-history` endpoint returning plans grouped by branch name
 
 ---
 
-*Last updated: March 20, 2026*
+*Last updated: April 2, 2026*

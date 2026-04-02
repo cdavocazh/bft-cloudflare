@@ -458,6 +458,13 @@ export async function deleteWorkoutPlan(db: D1Database, planDate: string): Promi
   return result.meta.changes > 0;
 }
 
+export async function getBranchHistory(db: D1Database): Promise<{ branch: string; plan_date: string; theme: string }[]> {
+  const result = await db
+    .prepare('SELECT branch, plan_date, theme FROM workout_plans WHERE branch IS NOT NULL AND branch != \'\' ORDER BY branch ASC, plan_date DESC')
+    .all<{ branch: string; plan_date: string; theme: string }>();
+  return result.results;
+}
+
 export async function getWorkoutPlanStations(db: D1Database, planId: number): Promise<WorkoutPlanStation[]> {
   const result = await db
     .prepare('SELECT * FROM workout_plan_stations WHERE plan_id = ? ORDER BY station_number')

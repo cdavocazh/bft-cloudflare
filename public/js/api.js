@@ -145,6 +145,10 @@ const api = {
         return this.request(`/plans/${planDate}`);
     },
 
+    async getBranchHistory() {
+        return this.request('/plans/branch-history');
+    },
+
     async savePlan(data) {
         return this.request('/plans', {
             method: 'POST',

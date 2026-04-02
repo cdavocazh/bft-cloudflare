@@ -8,6 +8,7 @@ import {
   deleteWorkoutPlan,
   getWorkoutPlanStations,
   saveWorkoutPlanStations,
+  getBranchHistory,
 } from '../db';
 
 const plans = new Hono<{ Bindings: Env }>();
@@ -26,6 +27,20 @@ plans.get('/', async (c) => {
   );
 
   return c.json({ plans: plansWithStations });
+});
+
+// GET /api/plans/branch-history - Get branch visit history
+plans.get('/branch-history', async (c) => {
+  const history = await getBranchHistory(c.env.DB);
+
+  // Group by branch
+  const grouped: Record<string, { plan_date: string; theme: string }[]> = {};
+  for (const row of history) {
+    if (!grouped[row.branch]) grouped[row.branch] = [];
+    grouped[row.branch].push({ plan_date: row.plan_date, theme: row.theme });
+  }
+
+  return c.json({ branches: grouped });
 });
 
 // GET /api/plans/:date - Get workout plan for specific date
