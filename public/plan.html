@@ -108,7 +108,7 @@
             <div class="branch-history-view-toggle">
                 <button type="button" class="btn btn-sm view-toggle-btn active" id="view-by-branch-btn" onclick="setBranchHistoryView('branch')">By Branch</button>
                 <button type="button" class="btn btn-sm view-toggle-btn" id="view-by-date-btn" onclick="setBranchHistoryView('date')">By Date</button>
-                <select id="branch-history-month-filter" class="branch-month-filter" onchange="renderBranchHistoryView()">
+                <select id="branch-history-month-filter" class="branch-month-filter" onchange="branchHistoryPage = 1; renderBranchHistoryView()">
                     <option value="">All Time</option>
                 </select>
             </div>
@@ -765,6 +765,7 @@
                     <div class="plan-item" onclick="loadPlan('${p.plan_date}')">
                         <div class="plan-header">
                             <strong>${formatDate(p.plan_date)}</strong>
+                            ${p.branch ? `<span class="plan-branch">${p.branch}</span>` : ''}
                             <span class="plan-theme">${p.theme}</span>
                         </div>
                         ${p.stations && p.stations.length > 0 ? `
@@ -853,6 +854,8 @@
         }
         let branchHistoryData = null; // cache raw data
         let branchHistoryView = 'branch'; // 'branch' or 'date'
+        let branchHistoryPage = 1;
+        const BRANCH_HISTORY_PER_PAGE = 15;
 
         async function showBranchHistory() {
             const modal = document.getElementById('branch-history-modal');
@@ -873,6 +876,7 @@
 
         function setBranchHistoryView(view) {
             branchHistoryView = view;
+            branchHistoryPage = 1;
             document.getElementById('view-by-branch-btn').classList.toggle('active', view === 'branch');
             document.getElementById('view-by-date-btn').classList.toggle('active', view === 'date');
             if (branchHistoryData) renderBranchHistoryView();
@@ -918,33 +922,69 @@
                 return;
             }
 
+            // Flatten all entries for pagination
+            const allEntries = [];
+            branchNames.forEach(branch => {
+                branches[branch].forEach(entry => {
+                    allEntries.push({ ...entry, branch });
+                });
+            });
+
+            if (branchHistoryView === 'date') {
+                allEntries.sort((a, b) => b.plan_date.localeCompare(a.plan_date));
+            }
+
+            const totalEntries = allEntries.length;
+            const totalPages = Math.ceil(totalEntries / BRANCH_HISTORY_PER_PAGE);
+            if (branchHistoryPage > totalPages) branchHistoryPage = totalPages;
+            if (branchHistoryPage < 1) branchHistoryPage = 1;
+            const start = (branchHistoryPage - 1) * BRANCH_HISTORY_PER_PAGE;
+            const pageEntries = allEntries.slice(start, start + BRANCH_HISTORY_PER_PAGE);
+
+            let html = '';
+
             if (branchHistoryView === 'branch') {
-                content.innerHTML = branchNames.map(branch => `
+                // Group the paginated entries back by branch
+                const pageGrouped = {};
+                pageEntries.forEach(e => {
+                    if (!pageGrouped[e.branch]) pageGrouped[e.branch] = [];
+                    pageGrouped[e.branch].push(e);
+                });
+                html = Object.entries(pageGrouped).map(([branch, entries]) => `
                     <div class="branch-history-group">
                         <h3 class="branch-history-name">${branch}</h3>
                         <div class="branch-history-dates">
-                            ${branches[branch].map(entry => renderBranchEntry(entry, branch)).join('')}
+                            ${entries.map(entry => renderBranchEntry(entry, branch)).join('')}
                         </div>
                     </div>
                 `).join('');
             } else {
-                // Flatten and sort by date descending
-                const allEntries = [];
-                branchNames.forEach(branch => {
-                    branches[branch].forEach(entry => {
-                        allEntries.push({ ...entry, branch });
-                    });
-                });
-                allEntries.sort((a, b) => b.plan_date.localeCompare(a.plan_date));
-
-                content.innerHTML = `
+                html = `
                     <div class="branch-history-group">
                         <div class="branch-history-dates">
-                            ${allEntries.map(entry => renderBranchEntryWithBranch(entry)).join('')}
+                            ${pageEntries.map(entry => renderBranchEntryWithBranch(entry)).join('')}
                         </div>
                     </div>
                 `;
             }
+
+            // Pagination controls
+            if (totalPages > 1) {
+                html += `
+                    <div class="branch-history-pagination">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="changeBranchPage(-1)" ${branchHistoryPage <= 1 ? 'disabled' : ''}>Prev</button>
+                        <span class="page-info">${branchHistoryPage} / ${totalPages}</span>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="changeBranchPage(1)" ${branchHistoryPage >= totalPages ? 'disabled' : ''}>Next</button>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = html;
+        }
+
+        function changeBranchPage(delta) {
+            branchHistoryPage += delta;
+            renderBranchHistoryView();
         }
 
         function renderBranchEntry(entry, branch) {

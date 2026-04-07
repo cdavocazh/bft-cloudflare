@@ -309,6 +309,8 @@ wrangler deploy
 62. **Backend (plans.ts + db.ts)**: Added `PATCH /api/plans/:date` endpoint and `updateWorkoutPlanBranch` DB function for branch-only plan updates
 63. **Plan (plan.html)**: Added second "+ Add Station" button below the stations list (above Save/Delete) for easier access when many stations are shown
 64. **Plan (plan.html)**: Branch History modal now has a year-month filter dropdown — auto-populated from available data, filters entries client-side across both views
+65. **Plan (plan.html)**: Recent Plans items now show the branch name as a styled pill between date and theme
+66. **Plan (plan.html)**: Branch History modal now paginates at 15 entries per page with Prev/Next controls; page resets on view or filter change
 
 ---
 

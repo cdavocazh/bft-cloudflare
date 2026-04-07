@@ -320,6 +320,21 @@ h1 {
     color: var(--text-color);
 }
 
+.branch-history-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 0.5rem;
+}
+
+.branch-history-pagination .page-info {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #666);
+}
+
 /* Add station button below list */
 .add-station-bottom {
     display: block;
@@ -1752,6 +1767,15 @@ h1 {
     margin-bottom: 0.5rem;
     flex-wrap: wrap;
     gap: 0.5rem;
+}
+
+.plan-branch {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    background: rgba(100, 181, 246, 0.12);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
 }
 
 .plan-section-header h2 {
