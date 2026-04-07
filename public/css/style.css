@@ -225,6 +225,16 @@ h1 {
     border-color: var(--primary-color);
 }
 
+.branch-month-filter {
+    margin-left: auto;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.85rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--input-bg, var(--card-bg));
+    color: var(--text-color);
+}
+
 .branch-history-group {
     margin-bottom: 1rem;
 }

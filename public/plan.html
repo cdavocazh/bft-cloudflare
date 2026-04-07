@@ -108,6 +108,9 @@
             <div class="branch-history-view-toggle">
                 <button type="button" class="btn btn-sm view-toggle-btn active" id="view-by-branch-btn" onclick="setBranchHistoryView('branch')">By Branch</button>
                 <button type="button" class="btn btn-sm view-toggle-btn" id="view-by-date-btn" onclick="setBranchHistoryView('date')">By Date</button>
+                <select id="branch-history-month-filter" class="branch-month-filter" onchange="renderBranchHistoryView()">
+                    <option value="">All Time</option>
+                </select>
             </div>
             <div id="branch-history-content">
                 <p class="loading">Loading...</p>
@@ -860,6 +863,7 @@
             try {
                 const data = await api.getBranchHistory();
                 branchHistoryData = data.branches || {};
+                populateBranchMonthFilter();
                 renderBranchHistoryView();
             } catch (error) {
                 console.error('Error loading branch history:', error);
@@ -874,9 +878,39 @@
             if (branchHistoryData) renderBranchHistoryView();
         }
 
+        function populateBranchMonthFilter() {
+            const select = document.getElementById('branch-history-month-filter');
+            const months = new Set();
+            for (const entries of Object.values(branchHistoryData)) {
+                entries.forEach(e => {
+                    const ym = e.plan_date.substring(0, 7); // "YYYY-MM"
+                    months.add(ym);
+                });
+            }
+            const sorted = Array.from(months).sort().reverse();
+            select.innerHTML = '<option value="">All Time</option>' +
+                sorted.map(ym => {
+                    const [y, m] = ym.split('-');
+                    const label = new Date(y, parseInt(m) - 1).toLocaleString('default', { year: 'numeric', month: 'short' });
+                    return `<option value="${ym}">${label}</option>`;
+                }).join('');
+        }
+
+        function getFilteredBranchData() {
+            const monthFilter = document.getElementById('branch-history-month-filter').value;
+            if (!monthFilter) return branchHistoryData;
+
+            const filtered = {};
+            for (const [branch, entries] of Object.entries(branchHistoryData)) {
+                const matching = entries.filter(e => e.plan_date.startsWith(monthFilter));
+                if (matching.length > 0) filtered[branch] = matching;
+            }
+            return filtered;
+        }
+
         function renderBranchHistoryView() {
             const content = document.getElementById('branch-history-content');
-            const branches = branchHistoryData;
+            const branches = getFilteredBranchData();
             const branchNames = Object.keys(branches);
 
             if (branchNames.length === 0) {
