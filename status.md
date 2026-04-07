@@ -311,6 +311,7 @@ wrangler deploy
 64. **Plan (plan.html)**: Branch History modal now has a year-month filter dropdown — auto-populated from available data, filters entries client-side across both views
 65. **Plan (plan.html)**: Recent Plans items now show the branch name as a styled pill between date and theme
 66. **Plan (plan.html)**: Branch History modal now paginates at 15 entries per page with Prev/Next controls; page resets on view or filter change
+67. **Progress (progress.html)**: Replaced exercise `<select>` dropdown with a searchable text input + dropdown (same pattern as Log Workout tab) — supports debounced search, max 20 items shown, category filter applies to search results
 
 ---
 
