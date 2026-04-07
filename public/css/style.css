@@ -207,6 +207,24 @@ h1 {
 }
 
 /* Branch History */
+.branch-history-view-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.view-toggle-btn {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.view-toggle-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
 .branch-history-group {
     margin-bottom: 1rem;
 }
@@ -222,24 +240,82 @@ h1 {
 
 .branch-history-entry {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 0.5rem;
     padding: 0.4rem 0.5rem;
-    cursor: pointer;
     border-radius: 4px;
+    cursor: default;
 }
 
-.branch-history-entry:hover {
+.branch-history-entry:not(.editing):hover {
     background: var(--hover-bg, #f5f5f5);
+}
+
+.entry-nav {
+    cursor: pointer;
 }
 
 .branch-date {
     font-size: 0.9rem;
+    flex-shrink: 0;
 }
 
 .branch-theme {
     font-size: 0.85rem;
     color: var(--text-secondary, #666);
+    flex: 1;
+}
+
+.branch-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.btn-edit-branch {
+    background: none;
+    border: none;
+    color: var(--text-secondary, #999);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    margin-left: auto;
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.branch-history-entry:hover .btn-edit-branch {
+    opacity: 1;
+}
+
+.branch-edit-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    padding: 0.3rem 0.5rem 0.5rem;
+}
+
+.branch-edit-row.hidden {
+    display: none;
+}
+
+.branch-edit-input {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--input-bg, var(--card-bg));
+    color: var(--text-color);
+}
+
+/* Add station button below list */
+.add-station-bottom {
+    display: block;
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
 /* ==================== Forms (Mobile-Optimized) ==================== */

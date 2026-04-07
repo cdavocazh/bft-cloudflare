@@ -9,6 +9,7 @@ import {
   getWorkoutPlanStations,
   saveWorkoutPlanStations,
   getBranchHistory,
+  updateWorkoutPlanBranch,
 } from '../db';
 
 const plans = new Hono<{ Bindings: Env }>();
@@ -81,6 +82,22 @@ plans.post('/', async (c) => {
       success: true,
       stations_count: stationsData.length,
     });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// PATCH /api/plans/:date - Update branch field only (does not touch stations)
+plans.patch('/:date', async (c) => {
+  const planDate = c.req.param('date');
+  try {
+    const data = await c.req.json();
+    const success = await updateWorkoutPlanBranch(c.env.DB, planDate, data.branch ?? null);
+    if (!success) {
+      return c.json({ error: 'Plan not found' }, 404);
+    }
+    return c.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: message }, 400);

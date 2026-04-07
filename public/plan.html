@@ -73,6 +73,8 @@
                     <!-- Stations added dynamically -->
                 </div>
 
+                <button type="button" class="btn btn-secondary btn-sm add-station-bottom" onclick="addStation()">+ Add Station</button>
+
                 <div class="form-actions form-row-save-delete">
                     <button type="submit" class="btn btn-primary save-btn">Save Plan</button>
                     <button type="button" class="btn btn-danger delete-btn" onclick="deletePlan()">Delete Plan</button>
@@ -103,7 +105,11 @@
                 <h2>Branch History</h2>
                 <button type="button" class="modal-close" onclick="closeBranchHistory()">&times;</button>
             </div>
-            <div class="modal-body" id="branch-history-content">
+            <div class="branch-history-view-toggle">
+                <button type="button" class="btn btn-sm view-toggle-btn active" id="view-by-branch-btn" onclick="setBranchHistoryView('branch')">By Branch</button>
+                <button type="button" class="btn btn-sm view-toggle-btn" id="view-by-date-btn" onclick="setBranchHistoryView('date')">By Date</button>
+            </div>
+            <div id="branch-history-content">
                 <p class="loading">Loading...</p>
             </div>
         </div>
@@ -842,6 +848,9 @@
                 console.error('Error loading theme history:', error);
             }
         }
+        let branchHistoryData = null; // cache raw data
+        let branchHistoryView = 'branch'; // 'branch' or 'date'
+
         async function showBranchHistory() {
             const modal = document.getElementById('branch-history-modal');
             const content = document.getElementById('branch-history-content');
@@ -850,30 +859,145 @@
 
             try {
                 const data = await api.getBranchHistory();
-                const branches = data.branches || {};
-                const branchNames = Object.keys(branches);
+                branchHistoryData = data.branches || {};
+                renderBranchHistoryView();
+            } catch (error) {
+                console.error('Error loading branch history:', error);
+                content.innerHTML = '<p class="error">Error loading branch history</p>';
+            }
+        }
 
-                if (branchNames.length === 0) {
-                    content.innerHTML = '<p class="text-muted">No branch history found</p>';
-                    return;
-                }
+        function setBranchHistoryView(view) {
+            branchHistoryView = view;
+            document.getElementById('view-by-branch-btn').classList.toggle('active', view === 'branch');
+            document.getElementById('view-by-date-btn').classList.toggle('active', view === 'date');
+            if (branchHistoryData) renderBranchHistoryView();
+        }
 
+        function renderBranchHistoryView() {
+            const content = document.getElementById('branch-history-content');
+            const branches = branchHistoryData;
+            const branchNames = Object.keys(branches);
+
+            if (branchNames.length === 0) {
+                content.innerHTML = '<p class="text-muted">No branch history found</p>';
+                return;
+            }
+
+            if (branchHistoryView === 'branch') {
                 content.innerHTML = branchNames.map(branch => `
                     <div class="branch-history-group">
                         <h3 class="branch-history-name">${branch}</h3>
                         <div class="branch-history-dates">
-                            ${branches[branch].map(entry => `
-                                <div class="branch-history-entry" onclick="closeBranchHistory(); loadPlan('${entry.plan_date}');">
-                                    <span class="branch-date">${formatDate(entry.plan_date)}</span>
-                                    <span class="branch-theme">${entry.theme}</span>
-                                </div>
-                            `).join('')}
+                            ${branches[branch].map(entry => renderBranchEntry(entry, branch)).join('')}
                         </div>
                     </div>
                 `).join('');
+            } else {
+                // Flatten and sort by date descending
+                const allEntries = [];
+                branchNames.forEach(branch => {
+                    branches[branch].forEach(entry => {
+                        allEntries.push({ ...entry, branch });
+                    });
+                });
+                allEntries.sort((a, b) => b.plan_date.localeCompare(a.plan_date));
+
+                content.innerHTML = `
+                    <div class="branch-history-group">
+                        <div class="branch-history-dates">
+                            ${allEntries.map(entry => renderBranchEntryWithBranch(entry)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderBranchEntry(entry, branch) {
+            const date = entry.plan_date;
+            return `
+                <div class="branch-history-entry" id="bhe-${date}">
+                    <span class="branch-date entry-nav" onclick="closeBranchHistory(); loadPlan('${date}');">${formatDate(date)}</span>
+                    <span class="branch-theme entry-nav" onclick="closeBranchHistory(); loadPlan('${date}');">${entry.theme}</span>
+                    <button type="button" class="btn-edit-branch" title="Edit branch" onclick="startEditBranch('${date}', '${branch.replace(/'/g, "\\'")}', this)">✎</button>
+                </div>
+                <div class="branch-edit-row hidden" id="edit-row-${date}">
+                    <input type="text" class="branch-edit-input" id="edit-input-${date}" value="${branch.replace(/"/g, '&quot;')}" placeholder="Branch name">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveBranchEdit('${date}')">Save</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="cancelBranchEdit('${date}')">Cancel</button>
+                </div>
+            `;
+        }
+
+        function renderBranchEntryWithBranch(entry) {
+            const date = entry.plan_date;
+            const branch = entry.branch;
+            return `
+                <div class="branch-history-entry" id="bhe-${date}">
+                    <span class="branch-date entry-nav" onclick="closeBranchHistory(); loadPlan('${date}');">${formatDate(date)}</span>
+                    <span class="branch-label entry-nav" onclick="closeBranchHistory(); loadPlan('${date}');">${branch}</span>
+                    <span class="branch-theme entry-nav" onclick="closeBranchHistory(); loadPlan('${date}');">${entry.theme}</span>
+                    <button type="button" class="btn-edit-branch" title="Edit branch" onclick="startEditBranch('${date}', '${branch.replace(/'/g, "\\'")}', this)">✎</button>
+                </div>
+                <div class="branch-edit-row hidden" id="edit-row-${date}">
+                    <input type="text" class="branch-edit-input" id="edit-input-${date}" value="${branch.replace(/"/g, '&quot;')}" placeholder="Branch name">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveBranchEdit('${date}')">Save</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="cancelBranchEdit('${date}')">Cancel</button>
+                </div>
+            `;
+        }
+
+        function startEditBranch(date, currentBranch, btn) {
+            document.getElementById(`edit-row-${date}`).classList.remove('hidden');
+            document.getElementById(`bhe-${date}`).classList.add('editing');
+            document.getElementById(`edit-input-${date}`).focus();
+        }
+
+        function cancelBranchEdit(date) {
+            document.getElementById(`edit-row-${date}`).classList.add('hidden');
+            document.getElementById(`bhe-${date}`).classList.remove('editing');
+        }
+
+        async function saveBranchEdit(date) {
+            const input = document.getElementById(`edit-input-${date}`);
+            const newBranch = input.value.trim();
+
+            try {
+                await api.updatePlanBranch(date, newBranch || null);
+                showToast('Branch updated', 'success');
+
+                // Update local cache
+                const oldBranches = branchHistoryData;
+                const newGrouped = {};
+                for (const [b, entries] of Object.entries(oldBranches)) {
+                    entries.forEach(entry => {
+                        if (entry.plan_date === date) return; // remove from old group
+                        if (!newGrouped[b]) newGrouped[b] = [];
+                        newGrouped[b].push(entry);
+                    });
+                }
+                if (newBranch) {
+                    if (!newGrouped[newBranch]) newGrouped[newBranch] = [];
+                    // Find original entry theme
+                    let theme = '';
+                    for (const entries of Object.values(oldBranches)) {
+                        const found = entries.find(e => e.plan_date === date);
+                        if (found) { theme = found.theme; break; }
+                    }
+                    // Insert in date order
+                    newGrouped[newBranch].push({ plan_date: date, theme });
+                    newGrouped[newBranch].sort((a, b) => b.plan_date.localeCompare(a.plan_date));
+                }
+                // Remove empty groups
+                for (const key of Object.keys(newGrouped)) {
+                    if (newGrouped[key].length === 0) delete newGrouped[key];
+                }
+                branchHistoryData = newGrouped;
+                renderBranchHistoryView();
+                loadBranchHistory(); // refresh datalist
             } catch (error) {
-                console.error('Error loading branch history:', error);
-                content.innerHTML = '<p class="error">Error loading branch history</p>';
+                console.error('Error updating branch:', error);
+                showToast('Error updating branch', 'error');
             }
         }
 

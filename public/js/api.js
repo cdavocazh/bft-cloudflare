@@ -149,6 +149,13 @@ const api = {
         return this.request('/plans/branch-history');
     },
 
+    async updatePlanBranch(planDate, branch) {
+        return this.request(`/plans/${planDate}`, {
+            method: 'PATCH',
+            body: { branch }
+        });
+    },
+
     async savePlan(data) {
         return this.request('/plans', {
             method: 'POST',
