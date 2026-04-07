@@ -83,15 +83,31 @@
         <div class="card">
             <div class="section-header-row">
                 <h2>Recent Plans</h2>
-                <select id="theme-filter" onchange="loadRecentPlans()">
-                    <option value="">All Themes</option>
-                </select>
+                <div class="section-header-actions">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="showBranchHistory()">History</button>
+                    <select id="theme-filter" onchange="loadRecentPlans()">
+                        <option value="">All Themes</option>
+                    </select>
+                </div>
             </div>
             <div id="recent-plans">
                 <p class="loading">Loading...</p>
             </div>
         </div>
     </main>
+
+    <!-- Branch History Modal -->
+    <div id="branch-history-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Branch History</h2>
+                <button type="button" class="modal-close" onclick="closeBranchHistory()">&times;</button>
+            </div>
+            <div class="modal-body" id="branch-history-content">
+                <p class="loading">Loading...</p>
+            </div>
+        </div>
+    </div>
 
     <footer class="footer">
         <p>BFT Workout Tracker v2.0 | Cloudflare Workers + D1</p>
@@ -825,6 +841,44 @@
             } catch (error) {
                 console.error('Error loading theme history:', error);
             }
+        }
+        async function showBranchHistory() {
+            const modal = document.getElementById('branch-history-modal');
+            const content = document.getElementById('branch-history-content');
+            modal.classList.remove('hidden');
+            content.innerHTML = '<p class="loading">Loading...</p>';
+
+            try {
+                const data = await api.getBranchHistory();
+                const branches = data.branches || {};
+                const branchNames = Object.keys(branches);
+
+                if (branchNames.length === 0) {
+                    content.innerHTML = '<p class="text-muted">No branch history found</p>';
+                    return;
+                }
+
+                content.innerHTML = branchNames.map(branch => `
+                    <div class="branch-history-group">
+                        <h3 class="branch-history-name">${branch}</h3>
+                        <div class="branch-history-dates">
+                            ${branches[branch].map(entry => `
+                                <div class="branch-history-entry" onclick="closeBranchHistory(); loadPlan('${entry.plan_date}');">
+                                    <span class="branch-date">${formatDate(entry.plan_date)}</span>
+                                    <span class="branch-theme">${entry.theme}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading branch history:', error);
+                content.innerHTML = '<p class="error">Error loading branch history</p>';
+            }
+        }
+
+        function closeBranchHistory() {
+            document.getElementById('branch-history-modal').classList.add('hidden');
         }
     </script>
 </body>
