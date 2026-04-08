@@ -465,6 +465,14 @@ export async function getBranchHistory(db: D1Database): Promise<{ branch: string
   return result.results;
 }
 
+export async function updateWorkoutPlanBranch(db: D1Database, planDate: string, branch: string | null): Promise<boolean> {
+  const result = await db
+    .prepare('UPDATE workout_plans SET branch = ? WHERE plan_date = ?')
+    .bind(branch || null, planDate)
+    .run();
+  return result.meta.changes > 0;
+}
+
 export async function getWorkoutPlanStations(db: D1Database, planId: number): Promise<WorkoutPlanStation[]> {
   const result = await db
     .prepare('SELECT * FROM workout_plan_stations WHERE plan_id = ? ORDER BY station_number')

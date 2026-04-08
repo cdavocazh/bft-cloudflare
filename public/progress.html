@@ -30,15 +30,18 @@
             <div class="form-row-compact">
                 <div class="form-group">
                     <label for="category-filter">Category</label>
-                    <select id="category-filter" onchange="loadExercises()">
+                    <select id="category-filter" onchange="filterProgressExercises()">
                         <option value="">All Categories</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="exercise-select">Exercise</label>
-                    <select id="exercise-select" onchange="loadProgression()">
-                        <option value="">Select exercise...</option>
-                    </select>
+                    <label for="exercise-search">Exercise</label>
+                    <div class="exercise-search-container">
+                        <input type="text" id="exercise-search" placeholder="Type to search exercises..."
+                            oninput="filterProgressExercises()" onfocus="showProgressDropdown()" autocomplete="off">
+                        <div id="exercise-dropdown" class="exercise-dropdown hidden"></div>
+                    </div>
+                    <input type="hidden" id="exercise-select-id">
                 </div>
             </div>
         </div>
@@ -105,6 +108,9 @@
         let overviewChart = null;
         let progressionData = [];
         let cachedExercises = [];
+        let exerciseFilterTimer = null;
+        const MAX_DROPDOWN_ITEMS = 20;
+        let selectedExerciseName = '';
 
         document.addEventListener('DOMContentLoaded', async function() {
             // Read exercise ID from URL parameter or sessionStorage
@@ -135,20 +141,94 @@
             // Load constants and exercises in parallel
             await Promise.all([loadConstants(), loadExercises()]);
 
-            // Set exercise dropdown value after exercises are loaded, update heading
+            // Set exercise after exercises are loaded, update heading
             if (progressExerciseId) {
-                document.getElementById('exercise-select').value = progressExerciseId;
+                document.getElementById('exercise-select-id').value = progressExerciseId;
+                const ex = cachedExercises.find(e => e.id == progressExerciseId);
+                if (ex) {
+                    document.getElementById('exercise-search').value = ex.name;
+                    selectedExerciseName = ex.name;
+                }
                 await progressionPromise;
-                // Now update exercise name heading with actual name from dropdown
-                const selectEl = document.getElementById('exercise-select');
-                if (selectEl.value && selectEl.selectedOptions[0]) {
-                    document.getElementById('exercise-name').textContent = selectEl.selectedOptions[0].text + ' Progress';
+                if (ex) {
+                    document.getElementById('exercise-name').textContent = ex.name + ' Progress';
                 }
             } else {
                 // Show overview chart when no exercise is selected
                 await loadOverview();
             }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.exercise-search-container')) {
+                    hideProgressDropdown();
+                }
+            });
         });
+
+        function filterProgressExercises() {
+            clearTimeout(exerciseFilterTimer);
+            exerciseFilterTimer = setTimeout(() => {
+                const searchTerm = document.getElementById('exercise-search').value.trim();
+                const searchTermLower = searchTerm.toLowerCase();
+                const category = document.getElementById('category-filter').value;
+
+                let source = cachedExercises;
+                if (category) {
+                    source = source.filter(ex => ex.category === category || (ex.categories && ex.categories.includes(category)));
+                }
+
+                if (searchTerm === '') {
+                    renderProgressDropdown(source.slice(0, MAX_DROPDOWN_ITEMS), '', source.length);
+                } else {
+                    const filtered = source.filter(ex =>
+                        ex.name.toLowerCase().includes(searchTermLower)
+                    );
+                    renderProgressDropdown(filtered.slice(0, MAX_DROPDOWN_ITEMS), searchTerm, filtered.length);
+                }
+                showProgressDropdown();
+            }, 100);
+        }
+
+        function renderProgressDropdown(exercises, searchTerm = '', totalCount = 0) {
+            const dropdown = document.getElementById('exercise-dropdown');
+
+            if (exercises.length === 0) {
+                dropdown.innerHTML = '<div class="exercise-option disabled">No exercises found</div>';
+                return;
+            }
+
+            let html = exercises.map(ex => `
+                <div class="exercise-option" onclick="selectProgressExercise(${ex.id}, '${ex.name.replace(/'/g, "\\'")}')">${ex.name}${ex.equipment_type ? ` <span class="exercise-equipment">(${ex.equipment_type})</span>` : ''}</div>
+            `).join('');
+
+            if (totalCount > exercises.length) {
+                html += `<div class="exercise-option disabled" style="font-size:0.8rem; text-align:center;">Showing ${exercises.length} of ${totalCount} — type to narrow</div>`;
+            }
+
+            dropdown.innerHTML = html;
+        }
+
+        function selectProgressExercise(id, name) {
+            document.getElementById('exercise-select-id').value = id;
+            document.getElementById('exercise-search').value = name;
+            selectedExerciseName = name;
+            hideProgressDropdown();
+            loadProgression();
+        }
+
+        function showProgressDropdown() {
+            const dropdown = document.getElementById('exercise-dropdown');
+            if (!dropdown.innerHTML.trim()) {
+                const source = cachedExercises;
+                renderProgressDropdown(source.slice(0, MAX_DROPDOWN_ITEMS), '', source.length);
+            }
+            dropdown.classList.remove('hidden');
+        }
+
+        function hideProgressDropdown() {
+            document.getElementById('exercise-dropdown').classList.add('hidden');
+        }
 
         function loadOverview() {
             // Use cached exercises from loadExercises() - no extra API call needed
@@ -211,9 +291,8 @@
                     onClick: (event, elements) => {
                         if (elements.length > 0) {
                             const index = elements[0].index;
-                            const exerciseId = exercises[index].id;
-                            document.getElementById('exercise-select').value = exerciseId;
-                            loadProgression();
+                            const ex = exercises[index];
+                            selectProgressExercise(ex.id, ex.name);
                         }
                     }
                 }
@@ -233,17 +312,9 @@
         }
 
         async function loadExercises() {
-            const category = document.getElementById('category-filter').value;
-
             try {
-                const params = {};
-                if (category) params.category = category;
-
-                const data = await api.getExercises(params);
+                const data = await api.getExercises({});
                 cachedExercises = data.exercises;
-                const select = document.getElementById('exercise-select');
-                select.innerHTML = '<option value="">Select exercise...</option>' +
-                    data.exercises.map(ex => `<option value="${ex.id}">${ex.name}</option>`).join('');
             } catch (error) {
                 console.error('Error loading exercises:', error);
                 showToast('Error loading exercises: ' + (error.message || 'Unknown error'), 'error');
@@ -251,7 +322,7 @@
         }
 
         async function loadProgression(overrideExerciseId) {
-            const exerciseId = overrideExerciseId || document.getElementById('exercise-select').value;
+            const exerciseId = overrideExerciseId || document.getElementById('exercise-select-id').value;
             if (!exerciseId) {
                 // Show overview, hide exercise-specific sections
                 document.getElementById('overview-container').style.display = 'block';
@@ -269,11 +340,8 @@
                 const data = await api.getProgression(exerciseId);
                 progressionData = data.progression;
 
-                // Get exercise name from dropdown if available, use placeholder otherwise
-                const selectEl = document.getElementById('exercise-select');
-                const exerciseName = (selectEl.value && selectEl.selectedOptions[0] && selectEl.selectedOptions[0].text !== 'Select exercise...')
-                    ? selectEl.selectedOptions[0].text
-                    : 'Exercise';
+                // Get exercise name
+                const exerciseName = selectedExerciseName || 'Exercise';
                 document.getElementById('exercise-name').textContent = exerciseName + ' Progress';
 
                 // Always show the header with +1 button
@@ -409,17 +477,16 @@
         }
 
         function goToLogWorkout() {
-            const exerciseId = document.getElementById('exercise-select').value;
-            const exerciseName = document.getElementById('exercise-select').selectedOptions[0].text;
+            const exerciseId = document.getElementById('exercise-select-id').value;
             if (exerciseId) {
                 sessionStorage.setItem('logExerciseId', exerciseId);
-                sessionStorage.setItem('logExerciseName', exerciseName);
+                sessionStorage.setItem('logExerciseName', selectedExerciseName);
                 window.location.href = '/';
             }
         }
 
         function goToLibrary() {
-            const exerciseId = document.getElementById('exercise-select').value;
+            const exerciseId = document.getElementById('exercise-select-id').value;
             if (exerciseId) {
                 window.location.href = `/library.html?exercise=${exerciseId}`;
             }

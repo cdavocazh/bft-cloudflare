@@ -304,7 +304,15 @@ wrangler deploy
 57. **Log Workout (index.html)**: Shortened exercise dropdown links — "progress" → "Prog", "lib" → "Lib"
 58. **Plan (plan.html)**: Added "History" button next to "Recent Plans" heading — opens a modal showing all branch visit history grouped by branch with dates and themes; clicking an entry navigates to that plan
 59. **Backend (plans.ts)**: Added `/api/plans/branch-history` endpoint returning plans grouped by branch name
+60. **Plan (plan.html)**: Branch History modal now has "By Branch" / "By Date" view toggle — By Date shows all entries chronologically with branch label shown inline
+61. **Plan (plan.html)**: Each branch history entry now has an edit (✎) button to update the branch name for that plan without affecting stations; updates cached view immediately
+62. **Backend (plans.ts + db.ts)**: Added `PATCH /api/plans/:date` endpoint and `updateWorkoutPlanBranch` DB function for branch-only plan updates
+63. **Plan (plan.html)**: Added second "+ Add Station" button below the stations list (above Save/Delete) for easier access when many stations are shown
+64. **Plan (plan.html)**: Branch History modal now has a year-month filter dropdown — auto-populated from available data, filters entries client-side across both views
+65. **Plan (plan.html)**: Recent Plans items now show the branch name as a styled pill between date and theme
+66. **Plan (plan.html)**: Branch History modal now paginates at 15 entries per page with Prev/Next controls; page resets on view or filter change
+67. **Progress (progress.html)**: Replaced exercise `<select>` dropdown with a searchable text input + dropdown (same pattern as Log Workout tab) — supports debounced search, max 20 items shown, category filter applies to search results
 
 ---
 
-*Last updated: April 2, 2026*
+*Last updated: April 7, 2026*
