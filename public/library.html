@@ -179,9 +179,12 @@
                         <input type="number" id="exercise-reps-max" step="1" min="1" placeholder="e.g., 12">
                     </div>
                 </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
+                <div class="modal-actions modal-actions-split">
+                    <div class="modal-actions-left">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                    <button type="button" class="btn btn-danger modal-delete-btn hidden" id="modal-delete-btn" onclick="deleteExerciseFromModal()">Delete</button>
                 </div>
             </form>
         </div>
@@ -414,7 +417,26 @@
             document.querySelectorAll('input[name="exercise-category"]').forEach(cb => {
                 cb.checked = false;
             });
+            // Hide delete button for new exercises
+            document.getElementById('modal-delete-btn').classList.add('hidden');
             document.getElementById('exercise-modal').classList.remove('hidden');
+        }
+
+        async function deleteExerciseFromModal() {
+            const id = document.getElementById('edit-exercise-id').value;
+            const name = document.getElementById('exercise-name').value;
+            if (!id) return;
+            if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+
+            try {
+                await api.deleteExercise(id);
+                showToast('Exercise deleted', 'success');
+                closeModal();
+                loadExercises();
+                refreshEquipmentFilter();
+            } catch (error) {
+                showToast(error.message || 'Error deleting exercise', 'error');
+            }
         }
 
         async function editExercise(id) {
@@ -451,6 +473,8 @@
                 document.getElementById('exercise-reps-min').value = ex.reps_min || '';
                 document.getElementById('exercise-reps-max').value = ex.reps_max || '';
                 document.getElementById('exercise-measure-type').value = ex.measure_type || 'Rep';
+                // Show delete button when editing existing exercise
+                document.getElementById('modal-delete-btn').classList.remove('hidden');
                 document.getElementById('exercise-modal').classList.remove('hidden');
             } catch (error) {
                 console.error('Error loading exercise:', error);

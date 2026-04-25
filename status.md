@@ -312,6 +312,7 @@ wrangler deploy
 65. **Plan (plan.html)**: Recent Plans items now show the branch name as a styled pill between date and theme
 66. **Plan (plan.html)**: Branch History modal now paginates at 15 entries per page with Prev/Next controls; page resets on view or filter change
 67. **Progress (progress.html)**: Replaced exercise `<select>` dropdown with a searchable text input + dropdown (same pattern as Log Workout tab) — supports debounced search, max 20 items shown, category filter applies to search results
+68. **Library (library.html)**: Added Delete button to bottom-right of exercise edit modal (Cancel/Save remain on the left); only shows when editing existing exercise, hidden in Add mode
 
 ---
 

@@ -2178,6 +2178,23 @@ h1 {
     min-height: var(--touch-target-min);
 }
 
+.modal-actions-split {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.modal-actions-left {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.modal-delete-btn {
+    margin-left: auto;
+}
+
 /* Category checkboxes (multi-select in modal) */
 .category-checkboxes {
     display: flex;
