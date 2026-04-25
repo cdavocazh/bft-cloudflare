@@ -14,8 +14,8 @@ A workout tracking application built with TypeScript, Hono framework, and Cloudf
 bft-cloudflare/
 ├── src/
 │   ├── index.ts              # Main Hono app entry point
-│   ├── types.ts              # TypeScript types and constants
-│   ├── db.ts                 # Database operations
+│   ├── types.ts              # TypeScript types and shared constants
+│   ├── db.ts                 # D1 query helpers (prepared statements)
 │   └── routes/
 │       ├── exercises.ts      # Exercise API routes
 │       ├── workouts.ts       # Workout log API routes
@@ -27,16 +27,22 @@ bft-cloudflare/
 │   ├── progress.html         # Progress tracking
 │   ├── all-workouts.html     # Workout history
 │   ├── css/
-│   │   └── style.css
-│   └── js/
-│       ├── api.js            # API client
-│       └── utils.js          # Utility functions
-├── migrations/
-│   ├── 0001_init.sql         # Database schema
-│   └── 0002_seed.sql         # Seed data (60+ exercises)
+│   │   ├── style.css         # Base mobile-first styles
+│   │   └── material.css      # M3 design overlay (see docs/design-system.md)
+│   ├── js/
+│   │   ├── api.js            # API client
+│   │   └── utils.js          # Utility functions
+│   └── images/exercises/     # Exercise images (see IMAGE_NAMING_GUIDE.md)
+├── migrations/               # 0001 → 0008 schema + data migrations
+├── backups/                  # Local D1 export dumps (gitignored)
+├── docs/
+│   ├── STATUS.md             # Operator briefing (deployed state, in-flight work, quirks)
+│   └── design-system.md      # Material Design 3 evaluation + redesign log
 ├── package.json
 ├── tsconfig.json
-├── wrangler.toml             # Cloudflare configuration
+├── wrangler.toml             # Cloudflare configuration (worker + D1 binding)
+├── status.md                 # Hand-maintained feature/change log
+├── CLAUDE.md                 # Session rules for Claude Code
 └── README.md
 ```
 
@@ -227,9 +233,9 @@ npm run deploy
 | Templating | Jinja2 (server-side) | Static HTML (client-side) |
 | Hosting | Self-hosted/Vercel | Cloudflare Workers |
 | Cold starts | Varies | ~0ms |
-| Image uploads | Local filesystem | Not implemented* |
+| Image uploads | Local filesystem | Implemented (base64 → D1 + lazy fetch) |
 
-*Image uploads would require Cloudflare R2 storage integration.
+Image uploads are stored as base64 in the `exercises.image_url` column. To keep `GET /api/exercises` payloads small (~24 KB instead of multi-MB), the list endpoint omits `image_url` and exposes a `has_image` flag; the frontend lazy-fetches each image via `GET /api/exercises/:id` only when its card scrolls into view (see `lazyLoadCardImages()` in `public/library.html`).
 
 ## Cost
 
@@ -257,6 +263,16 @@ Make sure `wrangler.toml` has the correct database_id and you've created the dat
 ### Changes not appearing
 
 Clear your browser cache or hard refresh (Ctrl+Shift+R).
+
+## Documentation
+
+| Document | Audience | What it covers |
+|---|---|---|
+| [`docs/STATUS.md`](docs/STATUS.md) | Anyone opening this repo cold | Operator briefing — what's deployed, what's in flight, known quirks. Read first. |
+| [`docs/design-system.md`](docs/design-system.md) | Anyone working on UI | Material Design 3 framework evaluation + active redesign experimentation log. |
+| [`status.md`](status.md) | Maintainers | Hand-maintained feature catalog and per-session change log (per CLAUDE.md §1). |
+| [`CLAUDE.md`](CLAUDE.md) | Claude Code sessions | Session rules, conventions, architectural patterns, deployment commands. |
+| [`public/images/exercises/IMAGE_NAMING_GUIDE.md`](public/images/exercises/IMAGE_NAMING_GUIDE.md) | Image contributors | Required filenames + naming convention for exercise thumbnails. |
 
 ## License
 

@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#64B5F6">
+    <meta name="theme-color" content="#1B5EFA">
     <title>Progress - BFT Tracker</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
+    <link rel="stylesheet" href="/css/material.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -90,8 +95,22 @@
         </div>
 
         <div class="card" id="history-container" style="display: none;">
-            <h3>Workout History</h3>
+            <div class="history-header">
+                <h3>Workout History</h3>
+                <div class="pagination-header" id="pagination-header" style="display: none;">
+                    <button class="btn-page-nav" id="prev-page-btn-top" onclick="prevPage()" disabled>&lt;</button>
+                    <span class="page-label" id="page-label" tabindex="0" role="button" aria-label="Edit page number" onclick="enterPageEdit()" onkeydown="onPageLabelKey(event)">1</span>
+                    <input type="number" id="page-input" class="hidden" min="1" value="1" onblur="commitPageEdit()" onkeydown="onPageInputKey(event)">
+                    <span id="page-info-header">/1</span>
+                    <button class="btn-page-nav" id="next-page-btn-top" onclick="nextPage()" disabled>&gt;</button>
+                </div>
+            </div>
             <div id="workout-history"></div>
+            <div class="pagination-controls pagination-bottom" id="pagination-bottom" style="display: none;">
+                <button class="btn btn-sm btn-secondary" id="prev-page-btn" onclick="prevPage()" disabled>Prev</button>
+                <span id="page-info-bottom"></span>
+                <button class="btn btn-sm btn-secondary" id="next-page-btn" onclick="nextPage()" disabled>Next</button>
+            </div>
         </div>
     </main>
 
@@ -111,6 +130,8 @@
         let exerciseFilterTimer = null;
         const MAX_DROPDOWN_ITEMS = 20;
         let selectedExerciseName = '';
+        let currentPage = 1;
+        const HISTORY_PAGE_SIZE = 10;
 
         document.addEventListener('DOMContentLoaded', async function() {
             // Read exercise ID from URL parameter or sessionStorage
@@ -323,6 +344,7 @@
 
         async function loadProgression(overrideExerciseId) {
             const exerciseId = overrideExerciseId || document.getElementById('exercise-select-id').value;
+            currentPage = 1;
             if (!exerciseId) {
                 // Show overview, hide exercise-specific sections
                 document.getElementById('overview-container').style.display = 'block';
@@ -438,8 +460,17 @@
         function updateHistory() {
             const container = document.getElementById('workout-history');
             const reversed = [...progressionData].reverse();
+            const totalCount = reversed.length;
+            const totalPages = Math.max(1, Math.ceil(totalCount / HISTORY_PAGE_SIZE));
 
-            container.innerHTML = reversed.slice(0, 10).map(w => `
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIdx = (currentPage - 1) * HISTORY_PAGE_SIZE;
+            const endIdx = Math.min(startIdx + HISTORY_PAGE_SIZE, totalCount);
+            const paginated = reversed.slice(startIdx, endIdx);
+
+            container.innerHTML = paginated.map(w => `
                 <div class="workout-item-expandable" data-workout-id="${w.id}">
                     <div class="workout-item-compact" onclick="toggleWorkoutDetail(this)">
                         <span class="history-date">${formatDate(w.workout_date)}</span>
@@ -456,6 +487,83 @@
                     </div>
                 </div>
             `).join('');
+
+            document.getElementById('page-info-header').textContent = `/${totalPages}`;
+            document.getElementById('page-info-bottom').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('page-input').value = currentPage;
+            document.getElementById('page-input').max = totalPages;
+            document.getElementById('page-label').textContent = currentPage;
+
+            const showPagination = totalPages > 1;
+            document.getElementById('pagination-header').style.display = totalCount > 0 ? 'flex' : 'none';
+            document.getElementById('pagination-bottom').style.display = showPagination ? 'flex' : 'none';
+            document.getElementById('prev-page-btn').disabled = currentPage <= 1;
+            document.getElementById('next-page-btn').disabled = currentPage >= totalPages;
+            document.getElementById('prev-page-btn-top').disabled = currentPage <= 1;
+            document.getElementById('next-page-btn-top').disabled = currentPage >= totalPages;
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                updateHistory();
+            }
+        }
+
+        function nextPage() {
+            const totalPages = Math.max(1, Math.ceil(progressionData.length / HISTORY_PAGE_SIZE));
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateHistory();
+            }
+        }
+
+        function goToPage() {
+            const input = document.getElementById('page-input');
+            const page = parseInt(input.value);
+            const totalPages = Math.max(1, Math.ceil(progressionData.length / HISTORY_PAGE_SIZE));
+            if (!isNaN(page) && page >= 1 && page <= totalPages) {
+                currentPage = page;
+                updateHistory();
+            }
+        }
+
+        function enterPageEdit() {
+            const label = document.getElementById('page-label');
+            const input = document.getElementById('page-input');
+            label.classList.add('hidden');
+            input.classList.remove('hidden');
+            input.value = currentPage;
+            input.focus();
+            input.select();
+        }
+
+        function exitPageEdit() {
+            document.getElementById('page-label').classList.remove('hidden');
+            document.getElementById('page-input').classList.add('hidden');
+        }
+
+        function commitPageEdit() {
+            goToPage();
+            exitPageEdit();
+        }
+
+        function onPageInputKey(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.blur();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                document.getElementById('page-input').value = currentPage;
+                exitPageEdit();
+            }
+        }
+
+        function onPageLabelKey(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                enterPageEdit();
+            }
         }
 
         function toggleWorkoutDetail(header) {

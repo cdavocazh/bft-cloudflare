@@ -24,6 +24,7 @@ export interface Exercise {
   measure_type: string | null;
   created_at: string;
   workout_count?: number;
+  has_image?: number;
 }
 
 export interface WorkoutLog {

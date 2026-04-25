@@ -23,8 +23,12 @@ export async function getExercises(
   } = {}
 ): Promise<Exercise[]> {
   let query = `
-    SELECT e.*,
-           COALESCE(log_counts.workout_count, 0) as workout_count,
+    SELECT e.id, e.name, e.category, e.categories, e.subcategory,
+           e.equipment_type, e.muscle_main, e.muscle_additional,
+           e.weight_min, e.weight_max, e.weight_increment,
+           e.reps_min, e.reps_max, e.measure_type, e.created_at,
+           e.workout_count,
+           CASE WHEN e.image_url IS NULL OR e.image_url = '' THEN 0 ELSE 1 END as has_image,
            CASE e.equipment_type
                WHEN 'BB' THEN 1
                WHEN 'KB' THEN 2
@@ -32,11 +36,6 @@ export async function getExercises(
                ELSE 4
            END as eq_order
     FROM exercises e
-    LEFT JOIN (
-        SELECT exercise_id, COUNT(*) as workout_count
-        FROM workout_logs
-        GROUP BY exercise_id
-    ) log_counts ON e.id = log_counts.exercise_id
     WHERE 1=1
   `;
   const params: (string | number)[] = [];
@@ -88,16 +87,18 @@ export async function createExercise(db: D1Database, data: CreateExerciseRequest
     throw new Error(`Exercise '${data.exercise_name}' already exists`);
   }
 
-  const categoryStr = data.categories?.join(',') || data.category;
+  const primaryCategory = data.categories?.[0] || data.category;
+  const categoriesJoined = data.categories?.join(',') || null;
 
   const result = await db
     .prepare(
-      `INSERT INTO exercises (name, category, subcategory, equipment_type, muscle_main, muscle_additional, weight_min, weight_max, weight_increment, reps_min, reps_max, measure_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO exercises (name, category, categories, subcategory, equipment_type, muscle_main, muscle_additional, weight_min, weight_max, weight_increment, reps_min, reps_max, measure_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       data.exercise_name,
-      categoryStr,
+      primaryCategory,
+      categoriesJoined,
       data.subcategory || null,
       data.equipment_type || null,
       data.muscle_main || null,
@@ -471,6 +472,28 @@ export async function updateWorkoutPlanBranch(db: D1Database, planDate: string, 
     .bind(branch || null, planDate)
     .run();
   return result.meta.changes > 0;
+}
+
+export async function getStationsForPlans(
+  db: D1Database,
+  planIds: number[]
+): Promise<Map<number, WorkoutPlanStation[]>> {
+  const grouped = new Map<number, WorkoutPlanStation[]>();
+  if (planIds.length === 0) return grouped;
+  for (const id of planIds) grouped.set(id, []);
+
+  const placeholders = planIds.map(() => '?').join(',');
+  const result = await db
+    .prepare(
+      `SELECT * FROM workout_plan_stations WHERE plan_id IN (${placeholders}) ORDER BY plan_id, station_number`
+    )
+    .bind(...planIds)
+    .all<WorkoutPlanStation>();
+
+  for (const station of result.results) {
+    grouped.get(station.plan_id)?.push(station);
+  }
+  return grouped;
 }
 
 export async function getWorkoutPlanStations(db: D1Database, planId: number): Promise<WorkoutPlanStation[]> {

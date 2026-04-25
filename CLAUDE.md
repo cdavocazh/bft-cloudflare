@@ -1,5 +1,7 @@
 # Claude Code Instructions for BFT Workout Tracker
 
+> **Start here:** read `docs/STATUS.md` first — it's the operator briefing for what's currently deployed, in flight, and known to be quirky. Then continue with this file.
+
 ## Project Overview
 
 BFT Workout Tracker is a mobile-first web application for tracking gym workouts, built with:
@@ -19,16 +21,29 @@ bft-cloudflare/
 │   ├── progress.html         # Progress tracking with charts
 │   ├── all-workouts.html     # Workout history browser
 │   ├── css/
-│   │   └── style.css         # All styles (mobile-first, single file)
-│   └── js/
-│       ├── api.js            # API client for backend calls
-│       └── utils.js          # Utility functions (formatDate, showToast, etc.)
+│   │   ├── style.css         # Base mobile-first styles (single file)
+│   │   └── material.css      # M3 design overlay (loaded after style.css; see docs/design-system.md)
+│   ├── js/
+│   │   ├── api.js            # API client for backend calls
+│   │   └── utils.js          # Utility functions (formatDate, showToast, etc.)
+│   └── images/exercises/     # Exercise images (see IMAGE_NAMING_GUIDE.md)
 ├── src/
-│   └── index.ts              # Cloudflare Worker backend (Hono)
-├── schema.sql                # D1 database schema
-├── wrangler.toml             # Cloudflare configuration
-├── status.md                 # Requirements tracking (MUST UPDATE)
-└── claude.md                 # This file
+│   ├── index.ts              # Worker entry point (Hono router)
+│   ├── db.ts                 # D1 query helpers (prepared statements)
+│   ├── types.ts              # TypeScript types + shared constants
+│   └── routes/
+│       ├── exercises.ts      # /api/exercises/*
+│       ├── workouts.ts       # /api/workouts/*
+│       └── plans.ts          # /api/plans/*
+├── migrations/               # D1 schema migrations (0001 → 0008)
+├── backups/                  # Local D1 export dumps (gitignored)
+├── docs/
+│   ├── STATUS.md             # Operator briefing — read FIRST in new sessions
+│   └── design-system.md      # Material Design 3 evaluation + redesign log
+├── wrangler.toml             # Cloudflare config (worker + D1 binding)
+├── status.md                 # Hand-maintained feature/change log (MUST UPDATE — see §1)
+├── README.md                 # User-facing setup + API reference
+└── CLAUDE.md                 # This file (project rules for Claude sessions)
 ```
 
 ## Key Development Patterns
@@ -106,6 +121,38 @@ And in Recent Changes:
 - Dropdown rendered in `renderExerciseDropdown()` function
 - Each option can have additional elements (like "lib" link)
 - Use `onclick="event.stopPropagation()"` for nested clickable elements
+
+## Architectural Patterns
+
+### Exercise list response is "lite" — no `image_url`
+`GET /api/exercises` deliberately omits `image_url` from each row to keep the response small (~24 KB instead of multi-MB of base64). It returns a `has_image` flag (`0|1`) so the frontend knows whether to render a thumbnail. To get the image, fetch the single exercise via `GET /api/exercises/:id` (which returns the full row including `image_url`).
+
+When rendering thumbnails in a list (e.g. Library cards), use `IntersectionObserver` to lazy-load images per card via `api.getExercise(id)` only when the card scrolls into view. See `lazyLoadCardImages()` / `loadCardImage()` in `public/library.html` for the pattern.
+
+If you add a new column to `exercises` and want it in the list response, add it to the explicit `SELECT` list in `getExercises` (`src/db.ts`). Avoid `SELECT *` here — that's how `image_url` was leaking into the list before.
+
+### `exercises.workout_count` is denormalized
+The `workout_count` column on `exercises` is maintained by triggers on `workout_logs` (see migration `0008`):
+- `trg_workout_logs_after_insert` — increments on new log
+- `trg_workout_logs_after_delete` — decrements on log delete
+- `trg_workout_logs_after_update_exercise_id` — re-balances if a log moves between exercises
+
+If you add a new path that writes to `workout_logs` outside the regular `INSERT`/`DELETE`/`UPDATE` patterns (e.g. a bulk import or an `INSERT OR REPLACE`), verify the count stays correct or update it manually. If you ever truncate or seed `workout_logs` directly, re-run the backfill:
+
+```sql
+UPDATE exercises SET workout_count = (SELECT COUNT(*) FROM workout_logs WHERE exercise_id = exercises.id);
+```
+
+### N+1 avoidance for plans + stations
+`GET /api/plans` uses `getStationsForPlans(planIds)` (one `IN (...)` query) — do NOT loop `getWorkoutPlanStations(planId)` per plan. The single-plan endpoint (`GET /api/plans/:date`) is fine to use the per-plan helper because it's a single call.
+
+## Database Migrations & Backups
+
+- Migrations live in `migrations/NNNN_*.sql` and are applied via `wrangler d1 execute bft-workout-db --remote --file=...`
+- Always test migrations on local first with `--local` instead of `--remote`
+- Before any prod schema change, take a backup: `wrangler d1 export bft-workout-db --remote --output=./backups/prod-backup-pre-NNNN-$(date +%Y%m%d-%H%M%S).sql`
+- Backups go in `backups/` (gitignored) — never commit them, they contain personal workout data
+- Apply schema migration BEFORE deploying worker code that depends on the new schema, so the currently-running old worker keeps working through the gap
 
 ## API Endpoints Reference
 

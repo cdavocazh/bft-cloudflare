@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#64B5F6">
+    <meta name="theme-color" content="#1B5EFA">
     <title>All Workouts - BFT Tracker</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
+    <link rel="stylesheet" href="/css/material.css">
 </head>
 <body>
     <nav class="navbar">
@@ -74,7 +79,8 @@
                 <div class="header-controls">
                     <div class="pagination-header" id="pagination-header" style="display: none;" onclick="event.stopPropagation()">
                         <button class="btn-page-nav" id="prev-page-btn-top" onclick="prevPage()" disabled>&lt;</button>
-                        <input type="number" id="page-input" min="1" value="1" onchange="goToPage()">
+                        <span class="page-label" id="page-label" tabindex="0" role="button" aria-label="Edit page number" onclick="enterPageEdit()" onkeydown="onPageLabelKey(event)">1</span>
+                        <input type="number" id="page-input" class="hidden" min="1" value="1" onblur="commitPageEdit()" onkeydown="onPageInputKey(event)">
                         <span id="page-info-header">/1</span>
                         <button class="btn-page-nav" id="next-page-btn-top" onclick="nextPage()" disabled>&gt;</button>
                     </div>
@@ -541,6 +547,7 @@
             document.getElementById('page-info-bottom').textContent = `Page ${currentPage} of ${totalPages}`;
             document.getElementById('page-input').value = currentPage;
             document.getElementById('page-input').max = totalPages;
+            document.getElementById('page-label').textContent = currentPage;
 
             // Show/hide pagination controls - always show header controls if there are workouts
             const showPagination = totalPages > 1;
@@ -614,11 +621,18 @@
             return `${day}/${month}/${year}`;
         }
 
-        // Convert category to short form
+        // Convert category to short form. Defensive: if a comma-joined string
+        // sneaks in (legacy multi-category data), split + abbreviate each part.
         function getCategoryShort(category) {
+            if (!category) return '';
+            if (category.includes(',')) {
+                return category.split(',').map(c => getCategoryShort(c.trim())).join('/');
+            }
             const shorts = {
                 'Upper Body': 'UB',
                 'Lower Body': 'LB',
+                'Whole Body': 'W',
+                'Cardio HIIT': 'C',
                 'Core': 'Core',
                 'Cardio': 'Cardio',
                 'Full Body': 'FB',
@@ -640,6 +654,44 @@
             if (!isNaN(page) && page >= 1) {
                 currentPage = page;
                 applySearchFilter();
+            }
+        }
+
+        function enterPageEdit() {
+            const label = document.getElementById('page-label');
+            const input = document.getElementById('page-input');
+            label.classList.add('hidden');
+            input.classList.remove('hidden');
+            input.value = currentPage;
+            input.focus();
+            input.select();
+        }
+
+        function exitPageEdit() {
+            document.getElementById('page-label').classList.remove('hidden');
+            document.getElementById('page-input').classList.add('hidden');
+        }
+
+        function commitPageEdit() {
+            goToPage();
+            exitPageEdit();
+        }
+
+        function onPageInputKey(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.blur();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                document.getElementById('page-input').value = currentPage;
+                exitPageEdit();
+            }
+        }
+
+        function onPageLabelKey(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                enterPageEdit();
             }
         }
 

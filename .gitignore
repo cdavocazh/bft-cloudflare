@@ -30,6 +30,9 @@ venv/
 *.swo
 *~
 
+# Claude Code — keep launch.json (project preview config), ignore local-only settings
+.claude/settings.local.json
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -44,3 +47,8 @@ npm-debug.log*
 # Local database
 *.sqlite
 *.sqlite3
+remote-dump.sql
+
+# Database backups (contain personal workout data)
+backups/
+prod-backup*.sql

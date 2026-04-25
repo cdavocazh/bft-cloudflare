@@ -7,6 +7,7 @@ import {
   saveWorkoutPlan,
   deleteWorkoutPlan,
   getWorkoutPlanStations,
+  getStationsForPlans,
   saveWorkoutPlanStations,
   getBranchHistory,
   updateWorkoutPlanBranch,
@@ -19,13 +20,11 @@ plans.get('/', async (c) => {
   const limit = c.req.query('limit');
   const plansList = await getRecentWorkoutPlans(c.env.DB, limit ? parseInt(limit) : 10);
 
-  // Include stations for each plan
-  const plansWithStations = await Promise.all(
-    plansList.map(async (plan) => ({
-      ...plan,
-      stations: await getWorkoutPlanStations(c.env.DB, plan.id),
-    }))
-  );
+  const stationsByPlan = await getStationsForPlans(c.env.DB, plansList.map((p) => p.id));
+  const plansWithStations = plansList.map((plan) => ({
+    ...plan,
+    stations: stationsByPlan.get(plan.id) ?? [],
+  }));
 
   return c.json({ plans: plansWithStations });
 });
